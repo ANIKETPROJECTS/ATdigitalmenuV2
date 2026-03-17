@@ -181,6 +181,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Logo route
+  app.get("/api/logo", async (req, res) => {
+    try {
+      const logo = await storage.getLogo();
+      if (!logo) return res.status(404).json({ message: "Logo not found" });
+      res.json(logo);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch logo" });
+    }
+  });
+
   // Social links route
   app.get("/api/social-links", async (req, res) => {
     try {

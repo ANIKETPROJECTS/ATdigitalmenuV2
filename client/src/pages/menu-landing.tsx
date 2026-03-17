@@ -33,8 +33,8 @@ import premiumDessertsImg from "@assets/image_1765866710467.png";
 import premiumMocktailsImg from "@assets/stock_images/premium_colorful_moc_1a15dee9.jpg";
 import cocktailsImg from "@assets/COCKTAILS_1766751289781.jpg";
 import craftedBeerImg from "@assets/CRAFTED_BEER_1766750491358.jpg";
-import logoImg from "@assets/₹999-_(13)_1773734174550.png";
 import fallbackImg from "@assets/coming_soon_imagev2_1766811809828.jpg";
+import type { Logo } from "@shared/schema";
 
 
 const categoryImages: Record<string, string> = {
@@ -327,6 +327,10 @@ export default function MenuLanding() {
   const { data: carouselImages = [] } = useQuery<CarouselImage[]>({
     queryKey: ["/api/carousel"],
   });
+  const { data: logoData } = useQuery<Logo>({
+    queryKey: ["/api/logo"],
+  });
+  const logoUrl = logoData?.url || "";
   const [lightboxImage, setLightboxImage] = useState<CarouselImage | null>(null);
   const lightboxPaused = useRef(false);
   const swipeTouchX = useRef<number | null>(null);
@@ -410,9 +414,10 @@ export default function MenuLanding() {
 
             <div className="absolute left-1/2 transform -translate-x-1/2">
               <img
-                src={logoImg}
+                src={logoUrl}
                 alt="AT Digital Menu Logo"
                 className="h-40 sm:h-44 md:h-48 w-auto object-contain"
+                style={{ maxWidth: "160px" }}
                 data-testid="img-logo"
               />
             </div>
@@ -490,10 +495,10 @@ export default function MenuLanding() {
               <div className="px-7 pt-6 pb-7 flex flex-col items-center">
                 {/* Logo */}
                 <img
-                  src={logoImg}
+                  src={logoUrl}
                   alt="AT Digital Menu"
-                  className="w-52 object-contain mb-1"
-                  style={{ filter: "drop-shadow(0 0 12px rgba(212,175,55,0.35))" }}
+                  className="object-contain mb-1"
+                  style={{ filter: "drop-shadow(0 0 12px rgba(212,175,55,0.35))", width: "208px", height: "auto" }}
                 />
 
                 {/* Ornamental divider */}

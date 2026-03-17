@@ -40,8 +40,8 @@ declare global {
   }
 }
 
-import logoImg from "@assets/₹999-_(13)_1773734174550.png";
 import FloatingButtons from "@/components/floating-buttons";
+import type { Logo } from "@shared/schema";
 import sangriaImg from "@assets/image_1767545808245.png";
 import classicCocktailsImg from "@assets/image_1767545845465.png";
 import signatureCocktailsImg from "@assets/image_1767546048894.png";
@@ -191,6 +191,11 @@ export default function CategorySelection() {
     enabled: categoryId === "food" || categoryId === "bar"
   });
 
+  const { data: logoData } = useQuery<Logo>({
+    queryKey: ["/api/logo"],
+  });
+  const logoUrl = logoData?.url || "";
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [categoryId, foodSearchQuery]);
@@ -303,9 +308,10 @@ export default function CategorySelection() {
 
             <div className="absolute left-1/2 transform -translate-x-1/2">
               <img 
-                src={logoImg} 
+                src={logoUrl} 
                 alt="Barrel Born Logo" 
                 className="h-32 sm:h-36 md:h-40 w-auto object-contain"
+                style={{ maxWidth: "140px" }}
                 data-testid="img-logo"
               />
             </div>

@@ -1,5 +1,5 @@
 import { MongoClient, Db, Collection, ObjectId } from "mongodb";
-import { type User, type InsertUser, type MenuItem, type InsertMenuItem, type CartItem, type InsertCartItem, type Customer, type InsertCustomer, type SocialLinks, type WelcomeScreenUI, type Coupon, type CarouselImage } from "@shared/schema";
+import { type User, type InsertUser, type MenuItem, type InsertMenuItem, type CartItem, type InsertCartItem, type Customer, type InsertCustomer, type SocialLinks, type WelcomeScreenUI, type Coupon, type CarouselImage, type Logo } from "@shared/schema";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -26,6 +26,7 @@ export interface IStorage {
   getWelcomeScreenUI(): Promise<WelcomeScreenUI | null>;
   getCoupons(): Promise<Coupon[]>;
   getCarouselImages(): Promise<CarouselImage[]>;
+  getLogo(): Promise<Logo | null>;
 
   clearDatabase(): Promise<void>;
   fixVegNonVegClassification(): Promise<{ updated: number; details: string[] }>;
@@ -46,6 +47,7 @@ export class MongoStorage implements IStorage {
   private welcomeScreenUiCollection: Collection<WelcomeScreenUI>;
   private couponsCollection: Collection<Coupon>;
   private carouselCollection: Collection<CarouselImage>;
+  private logoCollection: Collection<Logo>;
   private restaurantId: ObjectId;
 
   private readonly categories = [
@@ -81,6 +83,7 @@ export class MongoStorage implements IStorage {
     this.welcomeScreenUiCollection = this.welcomeScreenDb.collection<WelcomeScreenUI>("welcomescreenui");
     this.couponsCollection = this.menuPageDb.collection<Coupon>("coupons");
     this.carouselCollection = this.menuPageDb.collection<CarouselImage>("carousel");
+    this.logoCollection = this.menuPageDb.collection<Logo>("logo");
     this.restaurantId = new ObjectId("6874cff2a880250859286de6");
   }
 
@@ -176,6 +179,20 @@ export class MongoStorage implements IStorage {
       ] as any[]);
     }
 
+    // Ensure menupage.logo collection exists and is seeded
+    if (!menuPageExistingNames.includes("logo")) {
+      console.log(`[Storage] Creating missing collection: logo in menupage`);
+      await this.menuPageDb.createCollection("logo");
+    }
+
+    const existingLogo = await this.logoCollection.countDocuments();
+    if (existingLogo === 0) {
+      console.log(`[Storage] Seeding default logo into menupage.logo`);
+      await this.logoCollection.insertOne({
+        url: "https://atdigitalmenu.com/wp-content/uploads/2025/01/AT-Digital-Menu-logo-transparent.png",
+      } as any);
+    }
+
     const existingCoupons = await this.couponsCollection.countDocuments();
     if (existingCoupons === 0) {
       console.log(`[Storage] Seeding default coupons into menupage.coupons`);
@@ -243,6 +260,10 @@ export class MongoStorage implements IStorage {
 
   async getCarouselImages(): Promise<CarouselImage[]> {
     return await this.carouselCollection.find({}).sort({ order: 1 }).toArray();
+  }
+
+  async getLogo(): Promise<Logo | null> {
+    return await this.logoCollection.findOne({});
   }
 
   async getUser(id: string): Promise<User | undefined> {

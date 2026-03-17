@@ -80,6 +80,11 @@ export interface Coupon {
   show: boolean;
 }
 
+export interface Logo {
+  _id: ObjectId;
+  url: string;
+}
+
 // Zod schemas for validation
 export const insertMenuItemSchema = z.object({
   name: z.string().min(1),
