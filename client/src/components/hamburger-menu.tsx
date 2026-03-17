@@ -2,7 +2,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, QrCode, Copy, Check, ExternalLink, Utensils, Users, ChevronDown, ChevronRight } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
-import { categoryTranslationMap } from "@/lib/translations";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { MenuCategory } from "@shared/schema";
@@ -367,8 +366,7 @@ export default function HamburgerMenu({
               {/* ── Category Grid ── */}
               <div className="grid grid-cols-2 gap-2.5">
                 {menuCategories.map((category, index) => {
-                  const translationKey = categoryTranslationMap[category.id];
-                  const label = translationKey ? t[translationKey] : category.title;
+                  const label = category.title;
                   return (
                     <motion.button
                       key={category.id}

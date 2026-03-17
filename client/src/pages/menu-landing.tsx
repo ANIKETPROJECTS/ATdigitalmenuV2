@@ -12,7 +12,6 @@ import {
 
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { categoryTranslationMap } from "@/lib/translations";
 import HamburgerMenu from "@/components/hamburger-menu";
 import FloatingButtons from "@/components/floating-buttons";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -689,8 +688,7 @@ export default function MenuLanding() {
 
         <div className="grid grid-cols-2 gap-3">
           {menuCategories.map((category, index) => {
-              const translationKey = categoryTranslationMap[category.id];
-              const label = translationKey ? t[translationKey] : category.title;
+              const label = category.title;
               const imgSrc = failedImages.has(category.id)
                 ? fallbackImg
                 : (category.image || categoryImages[category.id] || fallbackImg);

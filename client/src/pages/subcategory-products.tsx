@@ -19,7 +19,6 @@ import ProductCard from "@/components/product-card";
 import DishDetailModal from "@/components/dish-detail-modal";
 import FloatingButtons from "@/components/floating-buttons";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { categoryTranslationMap } from "@/lib/translations";
 import type { MenuItem, MenuCategory, MenuSubCategory } from "@shared/schema";
 
 function findSubcategoryNode(categories: MenuCategory[], categoryId: string, subcategoryId: string): MenuSubCategory | null {
@@ -234,11 +233,7 @@ export default function SubcategoryProducts() {
                   fontFamily: "'DM Sans', sans-serif",
                 }}
               >
-                {(currentSubcategory && (categoryTranslationMap[currentSubcategory.id]
-                  ? t[categoryTranslationMap[currentSubcategory.id]]
-                  : currentSubcategory.title)
-                  || subcategoryId
-                ).toString().toUpperCase()}
+                {(currentSubcategory?.title || subcategoryId).toUpperCase()}
               </h1>
             </div>
 

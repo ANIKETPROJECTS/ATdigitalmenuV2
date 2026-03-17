@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import ProductCard from "@/components/product-card";
 import HamburgerMenu from "@/components/hamburger-menu";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { categoryTranslationMap } from "@/lib/translations";
 import type { MenuItem, MenuCategory, MenuSubCategory } from "@shared/schema";
 
 type CategoryNode = (MenuCategory | MenuSubCategory) & { subcategories: MenuSubCategory[] };
@@ -498,8 +497,7 @@ export default function CategorySelection() {
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
             {filteredSubcategories.map((subcat, index) => {
-              const translationKey = categoryTranslationMap[subcat.id];
-              const subcatLabel = translationKey ? t[translationKey] : subcat.title;
+              const subcatLabel = subcat.title;
               const imgSrc = failedImages.has(subcat.id)
                 ? fallbackImg
                 : (subcat.image || subcategoryImages[subcat.id] || fallbackImg);
