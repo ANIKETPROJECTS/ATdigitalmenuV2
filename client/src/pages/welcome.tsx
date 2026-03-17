@@ -214,7 +214,7 @@ export default function Welcome() {
         {/* Logo */}
         <div
           className="w-full flex justify-center items-center flex-shrink-0"
-          style={{ paddingTop: "6px", height: "220px", overflow: "hidden" }}
+          style={{ paddingTop: "6px", height: "300px", overflow: "hidden" }}
         >
           <img
             src={logoSrc}
