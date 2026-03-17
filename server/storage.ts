@@ -1,5 +1,5 @@
 import { MongoClient, Db, Collection, ObjectId } from "mongodb";
-import { type User, type InsertUser, type MenuItem, type InsertMenuItem, type CartItem, type InsertCartItem, type Customer, type InsertCustomer, type SocialLinks, type WelcomeScreenUI, type Coupon, type CarouselImage, type Logo, type MenuCategory, type Reservation, type InsertReservation, type PaymentDetails } from "@shared/schema";
+import { type User, type InsertUser, type MenuItem, type InsertMenuItem, type CartItem, type InsertCartItem, type Customer, type InsertCustomer, type SocialLinks, type WelcomeScreenUI, type Coupon, type CarouselImage, type Logo, type MenuCategory, type Reservation, type InsertReservation, type PaymentDetails, type CallWaiter } from "@shared/schema";
 
 type UpdateMenuItemFlags = {
   todaysSpecial?: boolean;
@@ -42,6 +42,9 @@ export interface IStorage {
   createReservation(reservation: InsertReservation): Promise<Reservation>;
   getReservations(): Promise<Reservation[]>;
   getPaymentDetails(): Promise<PaymentDetails | null>;
+
+  getCallWaiterStatus(): Promise<CallWaiter | null>;
+  setCallWaiterStatus(called: boolean): Promise<CallWaiter>;
 }
 
 export class MongoStorage implements IStorage {
@@ -64,6 +67,7 @@ export class MongoStorage implements IStorage {
   private categoriesCollection: Collection<MenuCategory>;
   private reservationCollection: Collection<Reservation>;
   private paymentDetailsCollection: Collection<PaymentDetails>;
+  private callWaiterCollection: Collection<CallWaiter>;
   private restaurantId: ObjectId;
 
   private readonly categories = [
@@ -104,6 +108,7 @@ export class MongoStorage implements IStorage {
     this.categoriesCollection = this.menuPageDb.collection<MenuCategory>("categories");
     this.reservationCollection = this.hamburgerDb.collection<Reservation>("reservation");
     this.paymentDetailsCollection = this.hamburgerDb.collection<PaymentDetails>("paymentdetails");
+    this.callWaiterCollection = this.menuPageDb.collection<CallWaiter>("callwaiter");
     this.restaurantId = new ObjectId("6874cff2a880250859286de6");
   }
 
@@ -382,6 +387,18 @@ export class MongoStorage implements IStorage {
       ] as any[]);
     }
 
+    // Ensure menupage.callwaiter collection exists and is seeded
+    if (!menuPageExistingNames.includes("callwaiter")) {
+      console.log(`[Storage] Creating missing collection: callwaiter in menupage`);
+      await this.menuPageDb.createCollection("callwaiter");
+    }
+
+    const existingCallWaiter = await this.callWaiterCollection.findOne({});
+    if (!existingCallWaiter) {
+      console.log(`[Storage] Seeding default callwaiter document into menupage.callwaiter`);
+      await this.callWaiterCollection.insertOne({ called: false } as any);
+    }
+
     // Ensure hamburger.reservation and hamburger.paymentdetails collections exist
     const hamburgerCollections = await this.hamburgerDb.listCollections().toArray();
     const hamburgerExistingNames = hamburgerCollections.map(c => c.name);
@@ -639,6 +656,24 @@ export class MongoStorage implements IStorage {
 
   async getPaymentDetails(): Promise<PaymentDetails | null> {
     return await this.paymentDetailsCollection.findOne({});
+  }
+
+  async getCallWaiterStatus(): Promise<CallWaiter | null> {
+    return await this.callWaiterCollection.findOne({});
+  }
+
+  async setCallWaiterStatus(called: boolean): Promise<CallWaiter> {
+    const existing = await this.callWaiterCollection.findOne({});
+    if (existing) {
+      const updated = await this.callWaiterCollection.findOneAndUpdate(
+        { _id: existing._id },
+        { $set: { called } },
+        { returnDocument: "after" }
+      );
+      return updated!;
+    }
+    const result = await this.callWaiterCollection.insertOne({ called } as any);
+    return { _id: result.insertedId, called } as any;
   }
 
   async clearDatabase(): Promise<void> {

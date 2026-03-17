@@ -103,6 +103,11 @@ export interface PaymentDetails {
   upiId: string;
 }
 
+export interface CallWaiter {
+  _id: ObjectId;
+  called: boolean;
+}
+
 export interface MenuSubCategory {
   id: string;
   title: string;

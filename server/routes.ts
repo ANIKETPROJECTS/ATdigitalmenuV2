@@ -262,6 +262,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Call waiter routes
+  app.get("/api/call-waiter", async (req, res) => {
+    try {
+      const status = await storage.getCallWaiterStatus();
+      res.json(status ?? { called: false });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch call waiter status" });
+    }
+  });
+
+  app.patch("/api/call-waiter", async (req, res) => {
+    try {
+      const { called } = req.body;
+      if (typeof called !== "boolean") return res.status(400).json({ message: "'called' must be a boolean" });
+      const status = await storage.setCallWaiterStatus(called);
+      res.json(status);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update call waiter status" });
+    }
+  });
+
   // Payment details route
   app.get("/api/payment-details", async (req, res) => {
     try {

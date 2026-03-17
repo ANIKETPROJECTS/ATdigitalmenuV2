@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { X, Star, ChefHat } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
-import type { MenuItem } from "@shared/schema";
+import type { MenuItem, CallWaiter } from "@shared/schema";
 import chefsHatImg from "@assets/chefs-hat_1773556627617.png";
 import waiterImg from "@assets/waiter_1773555177013.png";
 import ProductCard from "@/components/product-card";
@@ -15,13 +16,23 @@ interface FloatingButtonsProps {
 
 export default function FloatingButtons({ isMenuOpen = false }: FloatingButtonsProps) {
   const { isDark } = useTheme();
-  const [waiterCalled, setWaiterCalled] = useState(false);
+  const queryClient = useQueryClient();
   const [showSmartMenu, setShowSmartMenu] = useState(false);
   const [activeSmartSection, setActiveSmartSection] = useState<"today" | "chef">("today");
   const [smartVegFilter, setSmartVegFilter] = useState<"all" | "veg" | "non-veg">("all");
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
   const { data: allItems = [] } = useQuery<MenuItem[]>({ queryKey: ["/api/menu-items"] });
+
+  const { data: callWaiterData } = useQuery<CallWaiter>({ queryKey: ["/api/call-waiter"] });
+  const waiterCalled = callWaiterData?.called ?? false;
+
+  const callWaiterMutation = useMutation({
+    mutationFn: (called: boolean) => apiRequest("PATCH", "/api/call-waiter", { called }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/call-waiter"] });
+    },
+  });
 
   const smartSections = useMemo(() => {
     const available = allItems.filter(i => i.isAvailable);
@@ -258,7 +269,7 @@ export default function FloatingButtons({ isMenuOpen = false }: FloatingButtonsP
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          onClick={() => setWaiterCalled(!waiterCalled)}
+          onClick={() => callWaiterMutation.mutate(!waiterCalled)}
           className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full shadow-lg"
           style={{
             background: isDark
