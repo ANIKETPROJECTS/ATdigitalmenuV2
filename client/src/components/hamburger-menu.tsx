@@ -3,8 +3,9 @@ import { X, QrCode, Copy, Check, ExternalLink, Utensils, Users, ChevronDown, Che
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import type { MenuCategory } from "@shared/schema";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import type { MenuCategory, PaymentDetails } from "@shared/schema";
 import Lottie from "lottie-react";
 // @ts-ignore
 import confirmationAnimation from "@assets/Confirmation_1773569485933.json";
@@ -23,7 +24,6 @@ interface HamburgerMenuProps {
   onCategoryClick: (categoryId: string) => void;
 }
 
-const UPI_ID = "atdigitalmenu@upi";
 const PHONE = "+91 9619523254";
 
 const TIME_SLOTS = [
@@ -46,15 +46,20 @@ function ReservationModal({ onClose }: { onClose: () => void }) {
   const [guests, setGuests] = useState("2");
   const [occasion, setOccasion] = useState("");
   const [confirmed, setConfirmed] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const reservationMutation = useMutation({
+    mutationFn: async (data: { name: string; phone: string; date: string; timeSlot: string; guests: string; occasion?: string }) => {
+      return await apiRequest("POST", "/api/reservations", data);
+    },
+    onSuccess: () => {
+      setConfirmed(true);
+    },
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !phone || !date || !timeSlot) return;
-    setIsSubmitting(true);
-    await new Promise((res) => setTimeout(res, 800));
-    setIsSubmitting(false);
-    setConfirmed(true);
+    reservationMutation.mutate({ name, phone, date, timeSlot, guests, ...(occasion ? { occasion } : {}) });
   };
 
   return (
@@ -235,7 +240,7 @@ function ReservationModal({ onClose }: { onClose: () => void }) {
               {/* Submit */}
               <button
                 type="submit"
-                disabled={isSubmitting || !name || !phone || !date || !timeSlot}
+                disabled={reservationMutation.isPending || !name || !phone || !date || !timeSlot}
                 className="w-full h-12 rounded-full font-bold tracking-widest text-sm transition-all active:scale-95 disabled:opacity-40 mt-2"
                 style={{
                   background: "linear-gradient(90deg, #D4AF37, #E6C55A)",
@@ -245,7 +250,7 @@ function ReservationModal({ onClose }: { onClose: () => void }) {
                 }}
                 data-testid="button-confirm-reservation"
               >
-                {isSubmitting ? "RESERVING..." : "CONFIRM RESERVATION"}
+                {reservationMutation.isPending ? "RESERVING..." : "CONFIRM RESERVATION"}
               </button>
             </form>
           </div>
@@ -314,13 +319,19 @@ export default function HamburgerMenu({
     queryKey: ["/api/menu-categories"],
   });
 
+  const { data: paymentDetails } = useQuery<PaymentDetails>({
+    queryKey: ["/api/payment-details"],
+  });
+
+  const upiId = paymentDetails?.upiId ?? "";
+
   const handleCategoryClick = (categoryId: string) => {
     onCategoryClick(categoryId);
     onClose();
   };
 
   const handleCopyUpi = () => {
-    navigator.clipboard.writeText(UPI_ID).catch(() => {});
+    navigator.clipboard.writeText(upiId).catch(() => {});
     setCopiedUpi(true);
     setTimeout(() => setCopiedUpi(false), 2500);
   };
@@ -434,7 +445,7 @@ export default function HamburgerMenu({
                   <div className="flex items-center justify-between rounded-xl px-4 py-3" style={{ background: isDark ? "rgba(212,175,55,0.07)" : "#FFFFFF", border: isDark ? "1px solid rgba(212,175,55,0.2)" : "1px solid rgba(0,0,0,0.1)" }}>
                     <div>
                       <p className="text-[10px] tracking-widest uppercase mb-0.5" style={{ color: "rgba(212,175,55,0.5)", fontFamily: "'DM Sans', sans-serif" }}>UPI ID</p>
-                      <p className="text-sm font-bold tracking-wide" style={{ color: "#D4AF37", fontFamily: "monospace" }}>{UPI_ID}</p>
+                      <p className="text-sm font-bold tracking-wide" style={{ color: "#D4AF37", fontFamily: "monospace" }}>{upiId || "Loading..."}</p>
                     </div>
                     <button
                       onClick={handleCopyUpi}
@@ -469,7 +480,7 @@ export default function HamburgerMenu({
                         <div className="flex flex-col items-center gap-2 pt-1">
                           <div className="w-44 h-44 rounded-xl flex items-center justify-center" style={{ background: "white", border: "3px solid #D4AF37" }}>
                             <img
-                              src={`https://api.qrserver.com/v1/create-qr-code/?size=176x176&data=upi://pay?pa=${UPI_ID}&pn=BarrelBorn&cu=INR`}
+                              src={`https://api.qrserver.com/v1/create-qr-code/?size=176x176&data=upi://pay?pa=${upiId}&pn=BarrelBorn&cu=INR`}
                               alt="UPI QR Code"
                               className="w-40 h-40 object-contain rounded"
                             />

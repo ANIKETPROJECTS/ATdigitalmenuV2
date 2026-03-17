@@ -87,6 +87,22 @@ export interface Logo {
   url: string;
 }
 
+export interface Reservation {
+  _id: ObjectId;
+  name: string;
+  phone: string;
+  date: string;
+  timeSlot: string;
+  guests: string;
+  occasion?: string;
+  createdAt: Date;
+}
+
+export interface PaymentDetails {
+  _id: ObjectId;
+  upiId: string;
+}
+
 export interface MenuSubCategory {
   id: string;
   title: string;
@@ -140,7 +156,17 @@ export const insertCustomerSchema = z.object({
   lastVisitDate: z.date().optional(),
 });
 
+export const insertReservationSchema = z.object({
+  name: z.string().min(1),
+  phone: z.string().min(10).max(10),
+  date: z.string().min(1),
+  timeSlot: z.string().min(1),
+  guests: z.string().min(1),
+  occasion: z.string().optional(),
+});
+
 export type InsertMenuItem = z.infer<typeof insertMenuItemSchema>;
 export type InsertCartItem = z.infer<typeof insertCartItemSchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
+export type InsertReservation = z.infer<typeof insertReservationSchema>;

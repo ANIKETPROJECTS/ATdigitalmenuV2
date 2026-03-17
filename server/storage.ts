@@ -1,5 +1,5 @@
 import { MongoClient, Db, Collection, ObjectId } from "mongodb";
-import { type User, type InsertUser, type MenuItem, type InsertMenuItem, type CartItem, type InsertCartItem, type Customer, type InsertCustomer, type SocialLinks, type WelcomeScreenUI, type Coupon, type CarouselImage, type Logo, type MenuCategory } from "@shared/schema";
+import { type User, type InsertUser, type MenuItem, type InsertMenuItem, type CartItem, type InsertCartItem, type Customer, type InsertCustomer, type SocialLinks, type WelcomeScreenUI, type Coupon, type CarouselImage, type Logo, type MenuCategory, type Reservation, type InsertReservation, type PaymentDetails } from "@shared/schema";
 
 type UpdateMenuItemFlags = {
   todaysSpecial?: boolean;
@@ -38,6 +38,10 @@ export interface IStorage {
 
   clearDatabase(): Promise<void>;
   fixVegNonVegClassification(): Promise<{ updated: number; details: string[] }>;
+
+  createReservation(reservation: InsertReservation): Promise<Reservation>;
+  getReservations(): Promise<Reservation[]>;
+  getPaymentDetails(): Promise<PaymentDetails | null>;
 }
 
 export class MongoStorage implements IStorage {
@@ -47,6 +51,7 @@ export class MongoStorage implements IStorage {
   private socialsDb: Db;
   private welcomeScreenDb: Db;
   private menuPageDb: Db;
+  private hamburgerDb: Db;
   private categoryCollections: Map<string, Collection<MenuItem>>;
   private cartItemsCollection: Collection<CartItem>;
   private usersCollection: Collection<User>;
@@ -57,6 +62,8 @@ export class MongoStorage implements IStorage {
   private carouselCollection: Collection<CarouselImage>;
   private logoCollection: Collection<Logo>;
   private categoriesCollection: Collection<MenuCategory>;
+  private reservationCollection: Collection<Reservation>;
+  private paymentDetailsCollection: Collection<PaymentDetails>;
   private restaurantId: ObjectId;
 
   private readonly categories = [
@@ -79,6 +86,7 @@ export class MongoStorage implements IStorage {
     this.socialsDb = this.client.db("socialsandcontact");
     this.welcomeScreenDb = this.client.db("welcomescreen");
     this.menuPageDb = this.client.db("menupage");
+    this.hamburgerDb = this.client.db("hamburger");
     this.categoryCollections = new Map();
 
     this.categories.forEach(category => {
@@ -94,6 +102,8 @@ export class MongoStorage implements IStorage {
     this.carouselCollection = this.menuPageDb.collection<CarouselImage>("carousel");
     this.logoCollection = this.menuPageDb.collection<Logo>("logo");
     this.categoriesCollection = this.menuPageDb.collection<MenuCategory>("categories");
+    this.reservationCollection = this.hamburgerDb.collection<Reservation>("reservation");
+    this.paymentDetailsCollection = this.hamburgerDb.collection<PaymentDetails>("paymentdetails");
     this.restaurantId = new ObjectId("6874cff2a880250859286de6");
   }
 
@@ -371,6 +381,26 @@ export class MongoStorage implements IStorage {
         },
       ] as any[]);
     }
+
+    // Ensure hamburger.reservation and hamburger.paymentdetails collections exist
+    const hamburgerCollections = await this.hamburgerDb.listCollections().toArray();
+    const hamburgerExistingNames = hamburgerCollections.map(c => c.name);
+
+    if (!hamburgerExistingNames.includes("reservation")) {
+      console.log(`[Storage] Creating missing collection: reservation in hamburger`);
+      await this.hamburgerDb.createCollection("reservation");
+    }
+
+    if (!hamburgerExistingNames.includes("paymentdetails")) {
+      console.log(`[Storage] Creating missing collection: paymentdetails in hamburger`);
+      await this.hamburgerDb.createCollection("paymentdetails");
+    }
+
+    const existingPaymentDetails = await this.paymentDetailsCollection.findOne({});
+    if (!existingPaymentDetails) {
+      console.log(`[Storage] Seeding default payment details into hamburger.paymentdetails`);
+      await this.paymentDetailsCollection.insertOne({ upiId: "atdigitalmenu@upi" } as any);
+    }
   }
 
   async getSocialLinks(): Promise<SocialLinks | null> {
@@ -594,6 +624,21 @@ export class MongoStorage implements IStorage {
 
   async clearCart(): Promise<void> {
     await this.cartItemsCollection.deleteMany({});
+  }
+
+  async createReservation(reservation: InsertReservation): Promise<Reservation> {
+    const now = new Date();
+    const doc = { ...reservation, createdAt: now };
+    const result = await this.reservationCollection.insertOne(doc as any);
+    return { _id: result.insertedId, ...doc } as any;
+  }
+
+  async getReservations(): Promise<Reservation[]> {
+    return await this.reservationCollection.find({}).sort({ createdAt: -1 }).toArray();
+  }
+
+  async getPaymentDetails(): Promise<PaymentDetails | null> {
+    return await this.paymentDetailsCollection.findOne({});
   }
 
   async clearDatabase(): Promise<void> {

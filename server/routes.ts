@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertCartItemSchema, insertCustomerSchema, updateMenuItemFlagsSchema } from "@shared/schema";
+import { insertCartItemSchema, insertCustomerSchema, updateMenuItemFlagsSchema, insertReservationSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Customer routes
@@ -235,6 +235,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(categories);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch menu categories" });
+    }
+  });
+
+  // Reservation routes
+  app.post("/api/reservations", async (req, res) => {
+    try {
+      const validated = insertReservationSchema.parse(req.body);
+      const reservation = await storage.createReservation(validated);
+      res.status(201).json(reservation);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid reservation data" });
+    }
+  });
+
+  app.get("/api/reservations", async (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || authHeader !== `Bearer admin123`) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    try {
+      const reservations = await storage.getReservations();
+      res.json(reservations);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch reservations" });
+    }
+  });
+
+  // Payment details route
+  app.get("/api/payment-details", async (req, res) => {
+    try {
+      const details = await storage.getPaymentDetails();
+      if (!details) return res.status(404).json({ message: "Payment details not found" });
+      res.json(details);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch payment details" });
     }
   });
 
