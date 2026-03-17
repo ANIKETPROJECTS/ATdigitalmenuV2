@@ -416,8 +416,7 @@ export default function MenuLanding() {
               <img
                 src={logoUrl}
                 alt="AT Digital Menu Logo"
-                className="h-40 sm:h-44 md:h-48 w-auto object-contain"
-                style={{ maxWidth: "160px" }}
+                style={{ width: "160px", height: "160px", objectFit: "contain" }}
                 data-testid="img-logo"
               />
             </div>
@@ -497,8 +496,8 @@ export default function MenuLanding() {
                 <img
                   src={logoUrl}
                   alt="AT Digital Menu"
-                  className="object-contain mb-1"
-                  style={{ filter: "drop-shadow(0 0 12px rgba(212,175,55,0.35))", width: "208px", height: "auto" }}
+                  className="mb-1"
+                  style={{ filter: "drop-shadow(0 0 12px rgba(212,175,55,0.35))", width: "208px", height: "208px", objectFit: "contain" }}
                 />
 
                 {/* Ornamental divider */}

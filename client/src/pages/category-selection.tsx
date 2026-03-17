@@ -310,8 +310,7 @@ export default function CategorySelection() {
               <img 
                 src={logoUrl} 
                 alt="Barrel Born Logo" 
-                className="h-32 sm:h-36 md:h-40 w-auto object-contain"
-                style={{ maxWidth: "140px" }}
+                style={{ width: "140px", height: "140px", objectFit: "contain" }}
                 data-testid="img-logo"
               />
             </div>
