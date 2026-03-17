@@ -375,14 +375,13 @@ export default function MenuLanding() {
   };
 
   useEffect(() => {
-    if (carouselImages.length === 0) return;
+    if (carouselImages.length <= 1) return;
+    const len = carouselImages.length;
     const interval = setInterval(() => {
-      setCurrentImageIndex(
-        (prevIndex) => (prevIndex + 1) % carouselImages.length,
-      );
+      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % len);
     }, 4000);
     return () => clearInterval(interval);
-  }, []);
+  }, [carouselImages.length]);
 
   const handleCategoryClick = (categoryId: string) => {
     setLocation(`/menu/${categoryId}`);
