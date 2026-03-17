@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
+import type { Coupon } from "@shared/schema";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
@@ -62,64 +64,12 @@ const categoryImages: Record<string, string> = {
   mocktails: premiumMocktailsImg,
 };
 
-const coupons = [
-  {
-    id: 1,
-    code: "BARREL20",
-    title: "20% OFF",
-    subtitle: "On your total bill",
-    description: "Valid on dine-in orders above ₹1000",
-    validity: "Valid till 31 Mar 2026",
-    gradient: ["#B8986A", "#7C5C30"],
-    tag: "LIMITED",
-  },
-  {
-    id: 2,
-    code: "HAPPYHOUR",
-    title: "₹100 Off",
-    subtitle: "On all cocktails",
-    description: "Every weekday between 5 PM – 8 PM",
-    validity: "Valid till 30 Apr 2026",
-    gradient: ["#5B7FA6", "#2C4A6E"],
-    tag: "HAPPY HOUR",
-  },
-  {
-    id: 3,
-    code: "CRAFT15",
-    title: "15% OFF",
-    subtitle: "On craft beers",
-    description: "All draught & craft beer on tap",
-    validity: "Valid till 15 Apr 2026",
-    gradient: ["#7A5C3C", "#4A3020"],
-    tag: "BEER LOVERS",
-  },
-  {
-    id: 4,
-    code: "WELCOME50",
-    title: "₹50 OFF",
-    subtitle: "First visit discount",
-    description: "On your very first order at Barrelborn",
-    validity: "Single use only",
-    gradient: ["#5C7A5C", "#3A5A3A"],
-    tag: "NEW GUEST",
-  },
-  {
-    id: 5,
-    code: "WEEKEND25",
-    title: "25% OFF",
-    subtitle: "Weekend special",
-    description: "On food orders — Saturday & Sunday",
-    validity: "Every weekend",
-    gradient: ["#7A3C5C", "#4A2038"],
-    tag: "WEEKEND",
-  },
-];
 
 function CouponCard({
   coupon,
   onClick,
 }: {
-  coupon: (typeof coupons)[0];
+  coupon: Coupon;
   onClick: () => void;
 }) {
   return (
@@ -127,7 +77,7 @@ function CouponCard({
       onClick={onClick}
       className="relative flex-shrink-0 focus:outline-none active:scale-95 transition-transform duration-150"
       style={{ width: "78vw", maxWidth: "340px", minWidth: "260px" }}
-      data-testid={`coupon-card-${coupon.id}`}
+      data-testid={`coupon-card-${coupon.code}`}
     >
       {/* Card body — two-section horizontal layout */}
       <div
@@ -201,9 +151,11 @@ function CouponCard({
 function CouponsFullScreen({
   open,
   onClose,
+  coupons,
 }: {
   open: boolean;
   onClose: () => void;
+  coupons: Coupon[];
 }) {
   return (
     <AnimatePresence>
@@ -268,7 +220,7 @@ function CouponsFullScreen({
           <div className="flex-1 overflow-y-auto px-4 py-5 space-y-4">
             {coupons.map((coupon, index) => (
               <motion.div
-                key={coupon.id}
+                key={coupon.code}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.07 }}
@@ -385,6 +337,10 @@ export default function MenuLanding() {
   const { t } = useLanguage();
   const { isDark } = useTheme();
   const [showCoupons, setShowCoupons] = useState(false);
+
+  const { data: coupons = [] } = useQuery<Coupon[]>({
+    queryKey: ["/api/coupons"],
+  });
   const [lightboxImage, setLightboxImage] = useState<
     (typeof promotionalImages)[0] | null
   >(null);
@@ -718,7 +674,7 @@ export default function MenuLanding() {
           >
             {[...coupons, ...coupons].map((coupon, index) => (
               <CouponCard
-                key={`${coupon.id}-${index}`}
+                key={`${coupon.code}-${index}`}
                 coupon={coupon}
                 onClick={() => setShowCoupons(true)}
               />
@@ -797,6 +753,7 @@ export default function MenuLanding() {
       <CouponsFullScreen
         open={showCoupons}
         onClose={() => setShowCoupons(false)}
+        coupons={coupons}
       />
 
       {/* Image Lightbox */}

@@ -1,5 +1,5 @@
 import { MongoClient, Db, Collection, ObjectId } from "mongodb";
-import { type User, type InsertUser, type MenuItem, type InsertMenuItem, type CartItem, type InsertCartItem, type Customer, type InsertCustomer, type SocialLinks, type WelcomeScreenUI } from "@shared/schema";
+import { type User, type InsertUser, type MenuItem, type InsertMenuItem, type CartItem, type InsertCartItem, type Customer, type InsertCustomer, type SocialLinks, type WelcomeScreenUI, type Coupon } from "@shared/schema";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -24,6 +24,7 @@ export interface IStorage {
 
   getSocialLinks(): Promise<SocialLinks | null>;
   getWelcomeScreenUI(): Promise<WelcomeScreenUI | null>;
+  getCoupons(): Promise<Coupon[]>;
 
   clearDatabase(): Promise<void>;
   fixVegNonVegClassification(): Promise<{ updated: number; details: string[] }>;
@@ -35,12 +36,14 @@ export class MongoStorage implements IStorage {
   private customersDb: Db;
   private socialsDb: Db;
   private welcomeScreenDb: Db;
+  private menuPageDb: Db;
   private categoryCollections: Map<string, Collection<MenuItem>>;
   private cartItemsCollection: Collection<CartItem>;
   private usersCollection: Collection<User>;
   private customersCollection: Collection<Customer>;
   private linksCollection: Collection<SocialLinks>;
   private welcomeScreenUiCollection: Collection<WelcomeScreenUI>;
+  private couponsCollection: Collection<Coupon>;
   private restaurantId: ObjectId;
 
   private readonly categories = [
@@ -62,6 +65,7 @@ export class MongoStorage implements IStorage {
     this.customersDb = this.client.db("customersdb");
     this.socialsDb = this.client.db("socialsandcontact");
     this.welcomeScreenDb = this.client.db("welcomescreen");
+    this.menuPageDb = this.client.db("menupage");
     this.categoryCollections = new Map();
 
     this.categories.forEach(category => {
@@ -73,6 +77,7 @@ export class MongoStorage implements IStorage {
     this.customersCollection = this.customersDb.collection("customers");
     this.linksCollection = this.socialsDb.collection<SocialLinks>("link");
     this.welcomeScreenUiCollection = this.welcomeScreenDb.collection<WelcomeScreenUI>("welcomescreenui");
+    this.couponsCollection = this.menuPageDb.collection<Coupon>("coupons");
     this.restaurantId = new ObjectId("6874cff2a880250859286de6");
   }
 
@@ -140,6 +145,72 @@ export class MongoStorage implements IStorage {
         buttonText: "EXPLORE OUR MENU",
       } as any);
     }
+
+    // Ensure menupage.coupons collection exists and is seeded
+    const menuPageCollections = await this.menuPageDb.listCollections().toArray();
+    const menuPageExistingNames = menuPageCollections.map(c => c.name);
+
+    if (!menuPageExistingNames.includes("coupons")) {
+      console.log(`[Storage] Creating missing collection: coupons in menupage`);
+      await this.menuPageDb.createCollection("coupons");
+    }
+
+    const existingCoupons = await this.couponsCollection.countDocuments();
+    if (existingCoupons === 0) {
+      console.log(`[Storage] Seeding default coupons into menupage.coupons`);
+      await this.couponsCollection.insertMany([
+        {
+          code: "BARREL20",
+          title: "20% OFF",
+          subtitle: "On your total bill",
+          description: "Valid on dine-in orders above ₹1000",
+          validity: "Valid till 31 Mar 2026",
+          gradient: ["#B8986A", "#7C5C30"],
+          tag: "LIMITED",
+          show: true,
+        },
+        {
+          code: "HAPPYHOUR",
+          title: "₹100 Off",
+          subtitle: "On all cocktails",
+          description: "Every weekday between 5 PM – 8 PM",
+          validity: "Valid till 30 Apr 2026",
+          gradient: ["#5B7FA6", "#2C4A6E"],
+          tag: "HAPPY HOUR",
+          show: true,
+        },
+        {
+          code: "CRAFT15",
+          title: "15% OFF",
+          subtitle: "On craft beers",
+          description: "All draught & craft beer on tap",
+          validity: "Valid till 15 Apr 2026",
+          gradient: ["#7A5C3C", "#4A3020"],
+          tag: "BEER LOVERS",
+          show: true,
+        },
+        {
+          code: "WELCOME50",
+          title: "₹50 OFF",
+          subtitle: "First visit discount",
+          description: "On your very first order at Barrelborn",
+          validity: "Single use only",
+          gradient: ["#5C7A5C", "#3A5A3A"],
+          tag: "NEW GUEST",
+          show: true,
+        },
+        {
+          code: "WEEKEND25",
+          title: "25% OFF",
+          subtitle: "Weekend special",
+          description: "On food orders — Saturday & Sunday",
+          validity: "Every weekend",
+          gradient: ["#7A3C5C", "#4A2038"],
+          tag: "WEEKEND",
+          show: true,
+        },
+      ] as any[]);
+    }
   }
 
   async getSocialLinks(): Promise<SocialLinks | null> {
@@ -148,6 +219,10 @@ export class MongoStorage implements IStorage {
 
   async getWelcomeScreenUI(): Promise<WelcomeScreenUI | null> {
     return await this.welcomeScreenUiCollection.findOne({});
+  }
+
+  async getCoupons(): Promise<Coupon[]> {
+    return await this.couponsCollection.find({ show: true }).toArray();
   }
 
   async getUser(id: string): Promise<User | undefined> {

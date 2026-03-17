@@ -62,6 +62,18 @@ export interface SocialLinks {
   website: string;
 }
 
+export interface Coupon {
+  _id: ObjectId;
+  code: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  validity: string;
+  gradient: [string, string];
+  tag: string;
+  show: boolean;
+}
+
 // Zod schemas for validation
 export const insertMenuItemSchema = z.object({
   name: z.string().min(1),

@@ -161,6 +161,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Coupons route — returns only coupons with show: true
+  app.get("/api/coupons", async (req, res) => {
+    try {
+      const coupons = await storage.getCoupons();
+      res.json(coupons);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch coupons" });
+    }
+  });
+
   // Social links route
   app.get("/api/social-links", async (req, res) => {
     try {
