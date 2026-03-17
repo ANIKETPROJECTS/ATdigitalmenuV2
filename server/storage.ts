@@ -45,6 +45,8 @@ export interface IStorage {
 
   getCallWaiterStatus(): Promise<CallWaiter | null>;
   setCallWaiterStatus(called: boolean): Promise<CallWaiter>;
+
+  getRestaurantInfo(): Promise<RestaurantInfo | null>;
 }
 
 export class MongoStorage implements IStorage {
@@ -68,6 +70,7 @@ export class MongoStorage implements IStorage {
   private reservationCollection: Collection<Reservation>;
   private paymentDetailsCollection: Collection<PaymentDetails>;
   private callWaiterCollection: Collection<CallWaiter>;
+  private restaurantInfoCollection: Collection<RestaurantInfo>;
   private restaurantId: ObjectId;
 
   private readonly categories = [
@@ -109,6 +112,7 @@ export class MongoStorage implements IStorage {
     this.reservationCollection = this.hamburgerDb.collection<Reservation>("reservation");
     this.paymentDetailsCollection = this.hamburgerDb.collection<PaymentDetails>("paymentdetails");
     this.callWaiterCollection = this.menuPageDb.collection<CallWaiter>("callwaiter");
+    this.restaurantInfoCollection = this.hamburgerDb.collection<RestaurantInfo>("RestaurantInfo");
     this.restaurantId = new ObjectId("6874cff2a880250859286de6");
   }
 

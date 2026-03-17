@@ -108,6 +108,22 @@ export interface CallWaiter {
   called: boolean;
 }
 
+export interface RestaurantInfoEntry {
+  name: string;
+  subtext: string;
+}
+
+export interface RestaurantInfo {
+  _id: ObjectId;
+  location: RestaurantInfoEntry;
+  contact: RestaurantInfoEntry;
+  hours: RestaurantInfoEntry;
+  instagram: RestaurantInfoEntry;
+  facebook: RestaurantInfoEntry;
+  youtube: RestaurantInfoEntry;
+  whatsapp: RestaurantInfoEntry;
+}
+
 export interface MenuSubCategory {
   id: string;
   title: string;
