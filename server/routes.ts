@@ -150,6 +150,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Welcome screen UI route
+  app.get("/api/welcome-screen-ui", async (req, res) => {
+    try {
+      const ui = await storage.getWelcomeScreenUI();
+      if (!ui) return res.status(404).json({ message: "Welcome screen UI not found" });
+      res.json(ui);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch welcome screen UI" });
+    }
+  });
+
   // Social links route
   app.get("/api/social-links", async (req, res) => {
     try {

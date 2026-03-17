@@ -1,5 +1,5 @@
 import { MongoClient, Db, Collection, ObjectId } from "mongodb";
-import { type User, type InsertUser, type MenuItem, type InsertMenuItem, type CartItem, type InsertCartItem, type Customer, type InsertCustomer, type SocialLinks } from "@shared/schema";
+import { type User, type InsertUser, type MenuItem, type InsertMenuItem, type CartItem, type InsertCartItem, type Customer, type InsertCustomer, type SocialLinks, type WelcomeScreenUI } from "@shared/schema";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -23,6 +23,7 @@ export interface IStorage {
   createOrUpdateCustomer(customer: InsertCustomer): Promise<{ customer: Customer; isNew: boolean }>;
 
   getSocialLinks(): Promise<SocialLinks | null>;
+  getWelcomeScreenUI(): Promise<WelcomeScreenUI | null>;
 
   clearDatabase(): Promise<void>;
   fixVegNonVegClassification(): Promise<{ updated: number; details: string[] }>;
@@ -33,11 +34,13 @@ export class MongoStorage implements IStorage {
   private db: Db;
   private customersDb: Db;
   private socialsDb: Db;
+  private welcomeScreenDb: Db;
   private categoryCollections: Map<string, Collection<MenuItem>>;
   private cartItemsCollection: Collection<CartItem>;
   private usersCollection: Collection<User>;
   private customersCollection: Collection<Customer>;
   private linksCollection: Collection<SocialLinks>;
+  private welcomeScreenUiCollection: Collection<WelcomeScreenUI>;
   private restaurantId: ObjectId;
 
   private readonly categories = [
@@ -58,6 +61,7 @@ export class MongoStorage implements IStorage {
     this.db = this.client.db("barrelborn");
     this.customersDb = this.client.db("customersdb");
     this.socialsDb = this.client.db("socialsandcontact");
+    this.welcomeScreenDb = this.client.db("welcomescreen");
     this.categoryCollections = new Map();
 
     this.categories.forEach(category => {
@@ -68,6 +72,7 @@ export class MongoStorage implements IStorage {
     this.usersCollection = this.db.collection("users");
     this.customersCollection = this.customersDb.collection("customers");
     this.linksCollection = this.socialsDb.collection<SocialLinks>("link");
+    this.welcomeScreenUiCollection = this.welcomeScreenDb.collection<WelcomeScreenUI>("welcomescreenui");
     this.restaurantId = new ObjectId("6874cff2a880250859286de6");
   }
 
@@ -117,10 +122,32 @@ export class MongoStorage implements IStorage {
         website: "https://www.atdigitalmenu.com",
       } as any);
     }
+
+    // Ensure welcomescreen.welcomescreenui collection exists with seed document
+    const welcomeCollections = await this.welcomeScreenDb.listCollections().toArray();
+    const welcomeExistingNames = welcomeCollections.map(c => c.name);
+
+    if (!welcomeExistingNames.includes("welcomescreenui")) {
+      console.log(`[Storage] Creating missing collection: welcomescreenui in welcomescreen`);
+      await this.welcomeScreenDb.createCollection("welcomescreenui");
+    }
+
+    const existingWelcomeUI = await this.welcomeScreenUiCollection.findOne({});
+    if (!existingWelcomeUI) {
+      console.log(`[Storage] Seeding default welcomescreenui document`);
+      await this.welcomeScreenUiCollection.insertOne({
+        logoUrl: "",
+        buttonText: "EXPLORE OUR MENU",
+      } as any);
+    }
   }
 
   async getSocialLinks(): Promise<SocialLinks | null> {
     return await this.linksCollection.findOne({});
+  }
+
+  async getWelcomeScreenUI(): Promise<WelcomeScreenUI | null> {
+    return await this.welcomeScreenUiCollection.findOne({});
   }
 
   async getUser(id: string): Promise<User | undefined> {

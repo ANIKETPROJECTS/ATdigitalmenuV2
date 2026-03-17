@@ -29,6 +29,11 @@ interface SocialLinks {
   website: string;
 }
 
+interface WelcomeScreenUI {
+  logoUrl: string;
+  buttonText: string;
+}
+
 const DEFAULT_LINKS: SocialLinks = {
   instagram: "https://www.instagram.com/barrelborn_?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==",
   facebook: "https://facebook.com",
@@ -39,6 +44,11 @@ const DEFAULT_LINKS: SocialLinks = {
   whatsapp: "https://wa.me/918278251111",
   email: "mailto:info@barrelborn.in",
   website: "https://www.atdigitalmenu.com",
+};
+
+const DEFAULT_WELCOME_UI: WelcomeScreenUI = {
+  logoUrl: "",
+  buttonText: "EXPLORE OUR MENU",
 };
 
 function ThemeToggle() {
@@ -159,7 +169,13 @@ export default function Welcome() {
     queryKey: ["/api/social-links"],
   });
 
+  const { data: welcomeUIData } = useQuery<WelcomeScreenUI>({
+    queryKey: ["/api/welcome-screen-ui"],
+  });
+
   const links: SocialLinks = linksData ?? DEFAULT_LINKS;
+  const welcomeUI: WelcomeScreenUI = welcomeUIData ?? DEFAULT_WELCOME_UI;
+  const logoSrc = welcomeUI.logoUrl && welcomeUI.logoUrl.trim() !== "" ? welcomeUI.logoUrl : atDigitalMenuLogo;
 
   const handleExploreMenu = () => {
     playWelcomeAudio();
@@ -198,7 +214,7 @@ export default function Welcome() {
         {/* Logo */}
         <div className="w-full flex justify-center" style={{ paddingTop: "6px" }}>
           <img
-            src={atDigitalMenuLogo}
+            src={logoSrc}
             alt="AT Digital Menu"
             style={{
               width: "360px",
@@ -225,7 +241,7 @@ export default function Welcome() {
           data-testid="button-explore-menu"
         >
           <img src={spoonForkImg} alt="" className="w-7 h-7 object-contain" style={{ mixBlendMode: "multiply" }} />
-          <span style={{ color: "#3D3100" }}>{t.exploreMenu}</span>
+          <span style={{ color: "#3D3100" }}>{welcomeUI.buttonText || t.exploreMenu}</span>
         </button>
 
         {/* Follow Our Socials label */}

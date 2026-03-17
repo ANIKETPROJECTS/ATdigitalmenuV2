@@ -43,6 +43,12 @@ export interface Customer {
   updatedAt: Date;
 }
 
+export interface WelcomeScreenUI {
+  _id: ObjectId;
+  logoUrl: string;
+  buttonText: string;
+}
+
 export interface SocialLinks {
   _id: ObjectId;
   instagram: string;
