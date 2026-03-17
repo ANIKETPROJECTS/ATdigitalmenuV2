@@ -622,7 +622,7 @@ export default function MenuLanding() {
           >
             <div
               className="relative rounded-[10px] overflow-hidden cursor-pointer group"
-              style={{ height: "280px" }}
+              style={{ height: "280px", width: "100%", flexShrink: 0 }}
               onClick={() => setLightboxImage(carouselImages[currentImageIndex])}
               data-testid="banner-image-carousel"
             >
@@ -637,7 +637,14 @@ export default function MenuLanding() {
                   <img
                     src={image.url}
                     alt={image.alt}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      objectPosition: "center",
+                      display: "block",
+                    }}
+                    className="transition-transform duration-500 group-hover:scale-105"
                   />
                 </motion.div>
               ))}
