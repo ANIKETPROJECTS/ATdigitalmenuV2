@@ -397,9 +397,9 @@ export default function MenuLanding() {
         className="sticky top-0 z-30 elegant-shadow"
         style={{ backgroundColor: "var(--bb-bg)" }}
       >
-        <div className="container mx-auto px-2 sm:px-4 py-5 sm:py-7">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+        <div className="container mx-auto px-2 sm:px-4 py-2">
+          <div className="grid grid-cols-3 items-center w-full">
+            <div className="flex items-center space-x-2 sm:space-x-3">
               <Button
                 variant="ghost"
                 size="icon"
@@ -412,16 +412,16 @@ export default function MenuLanding() {
               </Button>
             </div>
 
-            <div className="absolute left-1/2 transform -translate-x-1/2">
+            <div className="flex justify-center items-center">
               <img
                 src={logoUrl}
                 alt="AT Digital Menu Logo"
-                style={{ width: "160px", height: "160px", objectFit: "contain" }}
+                style={{ width: "96px", height: "96px", objectFit: "contain", display: "block" }}
                 data-testid="img-logo"
               />
             </div>
 
-            <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-3 flex-shrink-0">
+            <div className="flex justify-end items-center space-x-1 sm:space-x-2 md:space-x-3">
               <Button
                 variant="ghost"
                 size="icon"
