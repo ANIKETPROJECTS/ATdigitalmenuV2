@@ -161,6 +161,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Carousel images route
+  app.get("/api/carousel", async (req, res) => {
+    try {
+      const images = await storage.getCarouselImages();
+      res.json(images);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch carousel images" });
+    }
+  });
+
   // Coupons route — returns only coupons with show: true
   app.get("/api/coupons", async (req, res) => {
     try {

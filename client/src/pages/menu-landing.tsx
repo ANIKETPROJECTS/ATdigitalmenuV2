@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { Coupon } from "@shared/schema";
+import type { Coupon, CarouselImage } from "@shared/schema";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
@@ -36,24 +36,6 @@ import craftedBeerImg from "@assets/CRAFTED_BEER_1766750491358.jpg";
 import logoImg from "@assets/₹999-_(13)_1773734174550.png";
 import fallbackImg from "@assets/coming_soon_imagev2_1766811809828.jpg";
 
-// @ts-ignore
-import promo1 from "@assets/1_1_11zon_1767593666240.jpg";
-// @ts-ignore
-import promo2 from "@assets/2_2_11zon_1767593666237.jpg";
-// @ts-ignore
-import promo3 from "@assets/3_3_11zon_1767593666238.jpg";
-// @ts-ignore
-import promo4 from "@assets/4_4_11zon_1767593666239.jpg";
-// @ts-ignore
-import promo5 from "@assets/5_5_11zon_1767593666239.jpg";
-
-const promotionalImages = [
-  { id: 1, src: promo1, alt: "Restaurant Interior" },
-  { id: 2, src: promo2, alt: "Bar & Dining Area" },
-  { id: 3, src: promo3, alt: "Modern Ambiance" },
-  { id: 4, src: promo4, alt: "Contemporary Dining" },
-  { id: 5, src: promo5, alt: "Elegant Seating" },
-];
 
 const categoryImages: Record<string, string> = {
   food: premiumFoodImg,
@@ -341,9 +323,11 @@ export default function MenuLanding() {
   const { data: coupons = [] } = useQuery<Coupon[]>({
     queryKey: ["/api/coupons"],
   });
-  const [lightboxImage, setLightboxImage] = useState<
-    (typeof promotionalImages)[0] | null
-  >(null);
+
+  const { data: carouselImages = [] } = useQuery<CarouselImage[]>({
+    queryKey: ["/api/carousel"],
+  });
+  const [lightboxImage, setLightboxImage] = useState<CarouselImage | null>(null);
   const lightboxPaused = useRef(false);
   const swipeTouchX = useRef<number | null>(null);
 
@@ -391,9 +375,10 @@ export default function MenuLanding() {
   };
 
   useEffect(() => {
+    if (carouselImages.length === 0) return;
     const interval = setInterval(() => {
       setCurrentImageIndex(
-        (prevIndex) => (prevIndex + 1) % promotionalImages.length,
+        (prevIndex) => (prevIndex + 1) % carouselImages.length,
       );
     }, 4000);
     return () => clearInterval(interval);
@@ -629,42 +614,44 @@ export default function MenuLanding() {
       </AnimatePresence>
 
       <div className="container mx-auto px-3 sm:px-4 pt-5 pb-24">
-        {/* Gold gradient border wrapper for carousel */}
-        <div
-          className="rounded-xl p-[2px] mb-3"
-          style={{ background: "linear-gradient(90deg, #D4AF37, #E6C55A)" }}
-        >
+        {/* Gold gradient border wrapper for carousel — only shown when images exist */}
+        {carouselImages.length > 0 && (
           <div
-            className="relative rounded-[10px] overflow-hidden cursor-pointer group"
-            style={{ height: "280px" }}
-            onClick={() => setLightboxImage(promotionalImages[currentImageIndex])}
-            data-testid="banner-image-carousel"
+            className="rounded-xl p-[2px] mb-3"
+            style={{ background: "linear-gradient(90deg, #D4AF37, #E6C55A)" }}
           >
-            {promotionalImages.map((image, index) => (
-              <motion.div
-                key={image.id}
-                className="absolute inset-0"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: index === currentImageIndex ? 1 : 0 }}
-                transition={{ duration: 0.8, ease: "easeInOut" }}
-              >
-                <img
-                  src={image.src}
-                  alt={image.alt}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-              </motion.div>
-            ))}
-
             <div
-              className="absolute bottom-0 left-0 right-0 h-12 pointer-events-none"
-              style={{
-                background:
-                  "linear-gradient(to top, rgba(21,21,21,0.6), transparent)",
-              }}
-            />
+              className="relative rounded-[10px] overflow-hidden cursor-pointer group"
+              style={{ height: "280px" }}
+              onClick={() => setLightboxImage(carouselImages[currentImageIndex])}
+              data-testid="banner-image-carousel"
+            >
+              {carouselImages.map((image, index) => (
+                <motion.div
+                  key={String(image._id)}
+                  className="absolute inset-0"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: index === currentImageIndex ? 1 : 0 }}
+                  transition={{ duration: 0.8, ease: "easeInOut" }}
+                >
+                  <img
+                    src={image.url}
+                    alt={image.alt}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                </motion.div>
+              ))}
+
+              <div
+                className="absolute bottom-0 left-0 right-0 h-12 pointer-events-none"
+                style={{
+                  background:
+                    "linear-gradient(to top, rgba(21,21,21,0.6), transparent)",
+                }}
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Coupon Auto-Scroll Carousel — only rendered when at least 1 coupon is visible */}
         {coupons.length > 0 && (
@@ -790,10 +777,10 @@ export default function MenuLanding() {
               onClick={(e) => {
                 e.stopPropagation();
                 const prev =
-                  (currentImageIndex - 1 + promotionalImages.length) %
-                  promotionalImages.length;
+                  (currentImageIndex - 1 + carouselImages.length) %
+                  carouselImages.length;
                 setCurrentImageIndex(prev);
-                setLightboxImage(promotionalImages[prev]);
+                setLightboxImage(carouselImages[prev]);
               }}
             >
               <svg
@@ -816,9 +803,9 @@ export default function MenuLanding() {
               style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
               onClick={(e) => {
                 e.stopPropagation();
-                const next = (currentImageIndex + 1) % promotionalImages.length;
+                const next = (currentImageIndex + 1) % carouselImages.length;
                 setCurrentImageIndex(next);
-                setLightboxImage(promotionalImages[next]);
+                setLightboxImage(carouselImages[next]);
               }}
             >
               <svg
@@ -847,20 +834,20 @@ export default function MenuLanding() {
               onClick={(e) => e.stopPropagation()}
             >
               <img
-                src={lightboxImage.src}
+                src={lightboxImage.url}
                 alt={lightboxImage.alt}
                 className="w-full rounded-xl object-contain"
                 style={{ maxHeight: "80vh" }}
               />
               {/* Dot indicators */}
               <div className="flex justify-center gap-1.5 mt-4">
-                {promotionalImages.map((_, idx) => (
+                {carouselImages.map((_, idx) => (
                   <button
                     key={idx}
                     onClick={(e) => {
                       e.stopPropagation();
                       setCurrentImageIndex(idx);
-                      setLightboxImage(promotionalImages[idx]);
+                      setLightboxImage(carouselImages[idx]);
                     }}
                     className={`h-1.5 rounded-full transition-all duration-300 ${
                       idx === currentImageIndex

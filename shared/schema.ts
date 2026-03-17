@@ -62,6 +62,13 @@ export interface SocialLinks {
   website: string;
 }
 
+export interface CarouselImage {
+  _id: ObjectId;
+  url: string;
+  alt: string;
+  order: number;
+}
+
 export interface Coupon {
   _id: ObjectId;
   code: string;

@@ -1,5 +1,5 @@
 import { MongoClient, Db, Collection, ObjectId } from "mongodb";
-import { type User, type InsertUser, type MenuItem, type InsertMenuItem, type CartItem, type InsertCartItem, type Customer, type InsertCustomer, type SocialLinks, type WelcomeScreenUI, type Coupon } from "@shared/schema";
+import { type User, type InsertUser, type MenuItem, type InsertMenuItem, type CartItem, type InsertCartItem, type Customer, type InsertCustomer, type SocialLinks, type WelcomeScreenUI, type Coupon, type CarouselImage } from "@shared/schema";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -25,6 +25,7 @@ export interface IStorage {
   getSocialLinks(): Promise<SocialLinks | null>;
   getWelcomeScreenUI(): Promise<WelcomeScreenUI | null>;
   getCoupons(): Promise<Coupon[]>;
+  getCarouselImages(): Promise<CarouselImage[]>;
 
   clearDatabase(): Promise<void>;
   fixVegNonVegClassification(): Promise<{ updated: number; details: string[] }>;
@@ -44,6 +45,7 @@ export class MongoStorage implements IStorage {
   private linksCollection: Collection<SocialLinks>;
   private welcomeScreenUiCollection: Collection<WelcomeScreenUI>;
   private couponsCollection: Collection<Coupon>;
+  private carouselCollection: Collection<CarouselImage>;
   private restaurantId: ObjectId;
 
   private readonly categories = [
@@ -78,6 +80,7 @@ export class MongoStorage implements IStorage {
     this.linksCollection = this.socialsDb.collection<SocialLinks>("link");
     this.welcomeScreenUiCollection = this.welcomeScreenDb.collection<WelcomeScreenUI>("welcomescreenui");
     this.couponsCollection = this.menuPageDb.collection<Coupon>("coupons");
+    this.carouselCollection = this.menuPageDb.collection<CarouselImage>("carousel");
     this.restaurantId = new ObjectId("6874cff2a880250859286de6");
   }
 
@@ -155,6 +158,24 @@ export class MongoStorage implements IStorage {
       await this.menuPageDb.createCollection("coupons");
     }
 
+    // Ensure menupage.carousel collection exists and is seeded
+    if (!menuPageExistingNames.includes("carousel")) {
+      console.log(`[Storage] Creating missing collection: carousel in menupage`);
+      await this.menuPageDb.createCollection("carousel");
+    }
+
+    const existingCarousel = await this.carouselCollection.countDocuments();
+    if (existingCarousel === 0) {
+      console.log(`[Storage] Seeding default carousel images into menupage.carousel`);
+      await this.carouselCollection.insertMany([
+        { url: "/carousel/promo1.jpg", alt: "Restaurant Interior", order: 1 },
+        { url: "/carousel/promo2.jpg", alt: "Bar & Dining Area", order: 2 },
+        { url: "/carousel/promo3.jpg", alt: "Modern Ambiance", order: 3 },
+        { url: "/carousel/promo4.jpg", alt: "Contemporary Dining", order: 4 },
+        { url: "/carousel/promo5.jpg", alt: "Elegant Seating", order: 5 },
+      ] as any[]);
+    }
+
     const existingCoupons = await this.couponsCollection.countDocuments();
     if (existingCoupons === 0) {
       console.log(`[Storage] Seeding default coupons into menupage.coupons`);
@@ -218,6 +239,10 @@ export class MongoStorage implements IStorage {
 
   async getCoupons(): Promise<Coupon[]> {
     return await this.couponsCollection.find({ show: true }).toArray();
+  }
+
+  async getCarouselImages(): Promise<CarouselImage[]> {
+    return await this.carouselCollection.find({}).sort({ order: 1 }).toArray();
   }
 
   async getUser(id: string): Promise<User | undefined> {
