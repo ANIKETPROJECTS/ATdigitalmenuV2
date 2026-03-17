@@ -157,8 +157,6 @@ export default function Welcome() {
 
   const { data: linksData } = useQuery<SocialLinks>({
     queryKey: ["/api/social-links"],
-    refetchInterval: 5000,
-    staleTime: 0,
   });
 
   const links: SocialLinks = linksData ?? DEFAULT_LINKS;
