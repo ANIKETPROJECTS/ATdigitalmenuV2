@@ -111,6 +111,8 @@ export interface CallWaiter {
 export interface RestaurantInfoEntry {
   name: string;
   subtext: string;
+  show: boolean;
+  linkKey?: string;
 }
 
 export interface RestaurantInfo {

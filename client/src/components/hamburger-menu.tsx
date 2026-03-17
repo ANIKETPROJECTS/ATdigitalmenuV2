@@ -333,6 +333,11 @@ export default function HamburgerMenu({
 
   const upiId = paymentDetails?.upiId ?? "";
 
+  const resolveLink = (linkKey?: string): string | undefined => {
+    if (!linkKey || !socialLinks) return undefined;
+    return (socialLinks as any)[linkKey];
+  };
+
   const handleCategoryClick = (categoryId: string) => {
     onCategoryClick(categoryId);
     onClose();
@@ -521,76 +526,101 @@ export default function HamburgerMenu({
                 </div>
                 <div className="p-4 space-y-4">
                   {/* Location */}
-                  <div className="flex items-center gap-3">
-                    <img src={mapsImg} alt="Location" className="w-10 h-10 object-contain flex-shrink-0" />
-                    <div>
-                      <p className="text-sm font-bold" style={{ color: isDark ? "#FFFFFF" : "#1a1a1a", fontFamily: "'DM Sans', sans-serif" }}>{restaurantInfo?.location?.name ?? "Barrelborn"}</p>
-                      <p className="text-xs mt-0.5" style={{ color: isDark ? "#FFFFFF" : "#555555", fontFamily: "'DM Sans', sans-serif" }}>{restaurantInfo?.location?.subtext ?? "Thane, Maharashtra"}</p>
+                  {restaurantInfo?.location?.show !== false && (
+                    <div className="flex items-center gap-3">
+                      <img src={mapsImg} alt="Location" className="w-10 h-10 object-contain flex-shrink-0" />
+                      <div>
+                        {resolveLink(restaurantInfo?.location?.linkKey) ? (
+                          <button onClick={() => window.open(resolveLink(restaurantInfo!.location.linkKey), "_blank", "noopener,noreferrer")}
+                            className="text-sm font-bold flex items-center gap-1 transition-opacity hover:opacity-80" style={{ color: isDark ? "#FFFFFF" : "#1a1a1a", fontFamily: "'DM Sans', sans-serif" }}>
+                            {restaurantInfo?.location?.name ?? "Barrelborn"} <ExternalLink className="w-3 h-3" style={{ color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.3)" }} />
+                          </button>
+                        ) : (
+                          <p className="text-sm font-bold" style={{ color: isDark ? "#FFFFFF" : "#1a1a1a", fontFamily: "'DM Sans', sans-serif" }}>{restaurantInfo?.location?.name ?? "Barrelborn"}</p>
+                        )}
+                        <p className="text-xs mt-0.5" style={{ color: isDark ? "#FFFFFF" : "#555555", fontFamily: "'DM Sans', sans-serif" }}>{restaurantInfo?.location?.subtext ?? "Thane, Maharashtra"}</p>
+                      </div>
                     </div>
-                  </div>
+                  )}
                   {/* Contact */}
-                  <div className="flex items-center gap-3">
-                    <img src={callImg} alt="Call" className="w-10 h-10 object-contain rounded-full flex-shrink-0" />
-                    <div>
-                      <button onClick={() => window.open(socialLinks?.call ?? `tel:${PHONE.replace(/\s/g, "")}`, "_self")}
-                        className="text-sm font-bold transition-opacity hover:opacity-80" style={{ color: isDark ? "#FFFFFF" : "#1a1a1a", fontFamily: "'DM Sans', sans-serif" }}>
-                        {restaurantInfo?.contact?.name ?? PHONE}
-                      </button>
-                      <p className="text-[10px] mt-0.5" style={{ color: isDark ? "#FFFFFF" : "#555555", fontFamily: "'DM Sans', sans-serif" }}>{restaurantInfo?.contact?.subtext ?? t.forReservations}</p>
+                  {restaurantInfo?.contact?.show !== false && (
+                    <div className="flex items-center gap-3">
+                      <img src={callImg} alt="Call" className="w-10 h-10 object-contain rounded-full flex-shrink-0" />
+                      <div>
+                        {resolveLink(restaurantInfo?.contact?.linkKey) ? (
+                          <button onClick={() => window.open(resolveLink(restaurantInfo!.contact.linkKey), "_self")}
+                            className="text-sm font-bold flex items-center gap-1 transition-opacity hover:opacity-80" style={{ color: isDark ? "#FFFFFF" : "#1a1a1a", fontFamily: "'DM Sans', sans-serif" }}>
+                            {restaurantInfo?.contact?.name ?? PHONE}
+                          </button>
+                        ) : (
+                          <p className="text-sm font-bold" style={{ color: isDark ? "#FFFFFF" : "#1a1a1a", fontFamily: "'DM Sans', sans-serif" }}>{restaurantInfo?.contact?.name ?? PHONE}</p>
+                        )}
+                        <p className="text-[10px] mt-0.5" style={{ color: isDark ? "#FFFFFF" : "#555555", fontFamily: "'DM Sans', sans-serif" }}>{restaurantInfo?.contact?.subtext ?? t.forReservations}</p>
+                      </div>
                     </div>
-                  </div>
-                  {/* Hours */}
-                  <div className="flex items-center gap-3">
-                    <img src={clockImg} alt="Hours" className="w-10 h-10 object-contain flex-shrink-0" />
-                    <div>
-                      <p className="text-sm font-bold" style={{ color: isDark ? "#FFFFFF" : "#1a1a1a", fontFamily: "'DM Sans', sans-serif" }}>{restaurantInfo?.hours?.name ?? "11:00 AM – 11:30 PM"}</p>
-                      <p className="text-[10px] mt-0.5" style={{ color: isDark ? "#FFFFFF" : "#555555", fontFamily: "'DM Sans', sans-serif" }}>{restaurantInfo?.hours?.subtext ?? t.openAllDays}</p>
+                  )}
+                  {/* Hours — no link */}
+                  {restaurantInfo?.hours?.show !== false && (
+                    <div className="flex items-center gap-3">
+                      <img src={clockImg} alt="Hours" className="w-10 h-10 object-contain flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-bold" style={{ color: isDark ? "#FFFFFF" : "#1a1a1a", fontFamily: "'DM Sans', sans-serif" }}>{restaurantInfo?.hours?.name ?? "11:00 AM – 11:30 PM"}</p>
+                        <p className="text-[10px] mt-0.5" style={{ color: isDark ? "#FFFFFF" : "#555555", fontFamily: "'DM Sans', sans-serif" }}>{restaurantInfo?.hours?.subtext ?? t.openAllDays}</p>
+                      </div>
                     </div>
-                  </div>
+                  )}
                   {/* Instagram */}
-                  <div className="flex items-center gap-3">
-                    <img src={instaImg} alt="Instagram" className="w-10 h-10 object-contain rounded-xl flex-shrink-0" />
-                    <div>
-                      <button onClick={() => window.open(socialLinks?.instagram ?? "https://www.instagram.com", "_blank", "noopener,noreferrer")}
-                        className="text-sm font-bold flex items-center gap-1 transition-opacity hover:opacity-80" style={{ color: isDark ? "#FFFFFF" : "#1a1a1a", fontFamily: "'DM Sans', sans-serif" }}>
-                        {restaurantInfo?.instagram?.name ?? "@barrelborn_"} <ExternalLink className="w-3 h-3" style={{ color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.3)" }} />
-                      </button>
-                      <p className="text-[10px] mt-0.5" style={{ color: isDark ? "#FFFFFF" : "#555555", fontFamily: "'DM Sans', sans-serif" }}>{restaurantInfo?.instagram?.subtext ?? t.followForUpdates}</p>
+                  {restaurantInfo?.instagram?.show !== false && (
+                    <div className="flex items-center gap-3">
+                      <img src={instaImg} alt="Instagram" className="w-10 h-10 object-contain rounded-xl flex-shrink-0" />
+                      <div>
+                        <button onClick={() => window.open(resolveLink(restaurantInfo?.instagram?.linkKey) ?? "https://www.instagram.com", "_blank", "noopener,noreferrer")}
+                          className="text-sm font-bold flex items-center gap-1 transition-opacity hover:opacity-80" style={{ color: isDark ? "#FFFFFF" : "#1a1a1a", fontFamily: "'DM Sans', sans-serif" }}>
+                          {restaurantInfo?.instagram?.name ?? "@barrelborn_"} <ExternalLink className="w-3 h-3" style={{ color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.3)" }} />
+                        </button>
+                        <p className="text-[10px] mt-0.5" style={{ color: isDark ? "#FFFFFF" : "#555555", fontFamily: "'DM Sans', sans-serif" }}>{restaurantInfo?.instagram?.subtext ?? t.followForUpdates}</p>
+                      </div>
                     </div>
-                  </div>
+                  )}
                   {/* Facebook */}
-                  <div className="flex items-center gap-3">
-                    <img src={fbImg} alt="Facebook" className="w-10 h-10 object-contain rounded-xl flex-shrink-0" />
-                    <div>
-                      <button onClick={() => window.open(socialLinks?.facebook ?? "https://facebook.com", "_blank", "noopener,noreferrer")}
-                        className="text-sm font-bold flex items-center gap-1 transition-opacity hover:opacity-80" style={{ color: isDark ? "#FFFFFF" : "#1a1a1a", fontFamily: "'DM Sans', sans-serif" }}>
-                        {restaurantInfo?.facebook?.name ?? "Barrelborn"} <ExternalLink className="w-3 h-3" style={{ color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.3)" }} />
-                      </button>
-                      <p className="text-[10px] mt-0.5" style={{ color: isDark ? "#FFFFFF" : "#555555", fontFamily: "'DM Sans', sans-serif" }}>{restaurantInfo?.facebook?.subtext ?? "Follow on Facebook"}</p>
+                  {restaurantInfo?.facebook?.show !== false && (
+                    <div className="flex items-center gap-3">
+                      <img src={fbImg} alt="Facebook" className="w-10 h-10 object-contain rounded-xl flex-shrink-0" />
+                      <div>
+                        <button onClick={() => window.open(resolveLink(restaurantInfo?.facebook?.linkKey) ?? "https://facebook.com", "_blank", "noopener,noreferrer")}
+                          className="text-sm font-bold flex items-center gap-1 transition-opacity hover:opacity-80" style={{ color: isDark ? "#FFFFFF" : "#1a1a1a", fontFamily: "'DM Sans', sans-serif" }}>
+                          {restaurantInfo?.facebook?.name ?? "Barrelborn"} <ExternalLink className="w-3 h-3" style={{ color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.3)" }} />
+                        </button>
+                        <p className="text-[10px] mt-0.5" style={{ color: isDark ? "#FFFFFF" : "#555555", fontFamily: "'DM Sans', sans-serif" }}>{restaurantInfo?.facebook?.subtext ?? "Follow on Facebook"}</p>
+                      </div>
                     </div>
-                  </div>
+                  )}
                   {/* YouTube */}
-                  <div className="flex items-center gap-3">
-                    <img src={ytImg} alt="YouTube" className="w-10 h-10 object-contain rounded-xl flex-shrink-0" />
-                    <div>
-                      <button onClick={() => window.open(socialLinks?.youtube ?? "https://youtube.com", "_blank", "noopener,noreferrer")}
-                        className="text-sm font-bold flex items-center gap-1 transition-opacity hover:opacity-80" style={{ color: isDark ? "#FFFFFF" : "#1a1a1a", fontFamily: "'DM Sans', sans-serif" }}>
-                        {restaurantInfo?.youtube?.name ?? "Barrelborn"} <ExternalLink className="w-3 h-3" style={{ color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.3)" }} />
-                      </button>
-                      <p className="text-[10px] mt-0.5" style={{ color: isDark ? "#FFFFFF" : "#555555", fontFamily: "'DM Sans', sans-serif" }}>{restaurantInfo?.youtube?.subtext ?? "Watch on YouTube"}</p>
+                  {restaurantInfo?.youtube?.show !== false && (
+                    <div className="flex items-center gap-3">
+                      <img src={ytImg} alt="YouTube" className="w-10 h-10 object-contain rounded-xl flex-shrink-0" />
+                      <div>
+                        <button onClick={() => window.open(resolveLink(restaurantInfo?.youtube?.linkKey) ?? "https://youtube.com", "_blank", "noopener,noreferrer")}
+                          className="text-sm font-bold flex items-center gap-1 transition-opacity hover:opacity-80" style={{ color: isDark ? "#FFFFFF" : "#1a1a1a", fontFamily: "'DM Sans', sans-serif" }}>
+                          {restaurantInfo?.youtube?.name ?? "Barrelborn"} <ExternalLink className="w-3 h-3" style={{ color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.3)" }} />
+                        </button>
+                        <p className="text-[10px] mt-0.5" style={{ color: isDark ? "#FFFFFF" : "#555555", fontFamily: "'DM Sans', sans-serif" }}>{restaurantInfo?.youtube?.subtext ?? "Watch on YouTube"}</p>
+                      </div>
                     </div>
-                  </div>
+                  )}
                   {/* WhatsApp */}
-                  <div className="flex items-center gap-3">
-                    <img src={whatsappImg} alt="WhatsApp" className="w-10 h-10 object-contain rounded-xl flex-shrink-0" />
-                    <div>
-                      <button onClick={() => window.open(socialLinks?.whatsapp ?? "https://wa.me/918278251111", "_blank", "noopener,noreferrer")}
-                        className="text-sm font-bold flex items-center gap-1 transition-opacity hover:opacity-80" style={{ color: isDark ? "#FFFFFF" : "#1a1a1a", fontFamily: "'DM Sans', sans-serif" }}>
-                        {restaurantInfo?.whatsapp?.name ?? "+91 8278251111"} <ExternalLink className="w-3 h-3" style={{ color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.3)" }} />
-                      </button>
-                      <p className="text-[10px] mt-0.5" style={{ color: isDark ? "#FFFFFF" : "#555555", fontFamily: "'DM Sans', sans-serif" }}>{restaurantInfo?.whatsapp?.subtext ?? "Chat on WhatsApp"}</p>
+                  {restaurantInfo?.whatsapp?.show !== false && (
+                    <div className="flex items-center gap-3">
+                      <img src={whatsappImg} alt="WhatsApp" className="w-10 h-10 object-contain rounded-xl flex-shrink-0" />
+                      <div>
+                        <button onClick={() => window.open(resolveLink(restaurantInfo?.whatsapp?.linkKey) ?? "https://wa.me/918278251111", "_blank", "noopener,noreferrer")}
+                          className="text-sm font-bold flex items-center gap-1 transition-opacity hover:opacity-80" style={{ color: isDark ? "#FFFFFF" : "#1a1a1a", fontFamily: "'DM Sans', sans-serif" }}>
+                          {restaurantInfo?.whatsapp?.name ?? "+91 8278251111"} <ExternalLink className="w-3 h-3" style={{ color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.3)" }} />
+                        </button>
+                        <p className="text-[10px] mt-0.5" style={{ color: isDark ? "#FFFFFF" : "#555555", fontFamily: "'DM Sans', sans-serif" }}>{restaurantInfo?.whatsapp?.subtext ?? "Chat on WhatsApp"}</p>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
 

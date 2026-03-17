@@ -434,14 +434,30 @@ export class MongoStorage implements IStorage {
     if (!existingRestaurantInfo) {
       console.log(`[Storage] Seeding default restaurantinfo into hamburger.restaurantinfo`);
       await this.restaurantInfoCollection.insertOne({
-        location: { name: "Barrelborn", subtext: "Thane, Maharashtra" },
-        contact: { name: "+91 9619523254", subtext: "For Reservations and Orders" },
-        hours: { name: "11:00 AM – 11:30 PM", subtext: "Open All Days" },
-        instagram: { name: "@barrelborn_", subtext: "Follow Us for Updates" },
-        facebook: { name: "Barrelborn", subtext: "Follow on Facebook" },
-        youtube: { name: "Barrelborn", subtext: "Watch on YouTube" },
-        whatsapp: { name: "+91 8278251111", subtext: "Chat on WhatsApp" },
+        location:  { name: "Barrelborn", subtext: "Thane, Maharashtra",           show: true, linkKey: "locate"    },
+        contact:   { name: "+91 9619523254", subtext: "For Reservations and Orders", show: true, linkKey: "call"    },
+        hours:     { name: "11:00 AM – 11:30 PM", subtext: "Open All Days",        show: true                      },
+        instagram: { name: "@barrelborn_", subtext: "Follow Us for Updates",        show: true, linkKey: "instagram" },
+        facebook:  { name: "Barrelborn", subtext: "Follow on Facebook",             show: true, linkKey: "facebook"  },
+        youtube:   { name: "Barrelborn", subtext: "Watch on YouTube",               show: true, linkKey: "youtube"   },
+        whatsapp:  { name: "+91 8278251111", subtext: "Chat on WhatsApp",           show: true, linkKey: "whatsapp"  },
       } as any);
+    } else if (existingRestaurantInfo.location && typeof (existingRestaurantInfo.location as any).show === 'undefined') {
+      console.log(`[Storage] Migrating restaurantinfo to add show/linkKey fields`);
+      await this.restaurantInfoCollection.updateOne(
+        { _id: existingRestaurantInfo._id },
+        {
+          $set: {
+            "location.show": true,  "location.linkKey": "locate",
+            "contact.show": true,   "contact.linkKey": "call",
+            "hours.show": true,
+            "instagram.show": true, "instagram.linkKey": "instagram",
+            "facebook.show": true,  "facebook.linkKey": "facebook",
+            "youtube.show": true,   "youtube.linkKey": "youtube",
+            "whatsapp.show": true,  "whatsapp.linkKey": "whatsapp",
+          }
+        }
+      );
     }
   }
 
