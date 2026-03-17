@@ -1,5 +1,5 @@
 import { MongoClient, Db, Collection, ObjectId } from "mongodb";
-import { type User, type InsertUser, type MenuItem, type InsertMenuItem, type CartItem, type InsertCartItem, type Customer, type InsertCustomer } from "@shared/schema";
+import { type User, type InsertUser, type MenuItem, type InsertMenuItem, type CartItem, type InsertCartItem, type Customer, type InsertCustomer, type SocialLinks } from "@shared/schema";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -22,6 +22,8 @@ export interface IStorage {
   getCustomerByPhone(phone: string): Promise<Customer | undefined>;
   createOrUpdateCustomer(customer: InsertCustomer): Promise<{ customer: Customer; isNew: boolean }>;
 
+  getSocialLinks(): Promise<SocialLinks | null>;
+
   clearDatabase(): Promise<void>;
   fixVegNonVegClassification(): Promise<{ updated: number; details: string[] }>;
 }
@@ -30,10 +32,12 @@ export class MongoStorage implements IStorage {
   private client: MongoClient;
   private db: Db;
   private customersDb: Db;
+  private socialsDb: Db;
   private categoryCollections: Map<string, Collection<MenuItem>>;
   private cartItemsCollection: Collection<CartItem>;
   private usersCollection: Collection<User>;
   private customersCollection: Collection<Customer>;
+  private linksCollection: Collection<SocialLinks>;
   private restaurantId: ObjectId;
 
   private readonly categories = [
@@ -53,6 +57,7 @@ export class MongoStorage implements IStorage {
     this.client = new MongoClient(connectionString);
     this.db = this.client.db("barrelborn");
     this.customersDb = this.client.db("customersdb");
+    this.socialsDb = this.client.db("socialsandcontact");
     this.categoryCollections = new Map();
 
     this.categories.forEach(category => {
@@ -62,6 +67,7 @@ export class MongoStorage implements IStorage {
     this.cartItemsCollection = this.db.collection("cartitems");
     this.usersCollection = this.db.collection("users");
     this.customersCollection = this.customersDb.collection("customers");
+    this.linksCollection = this.socialsDb.collection<SocialLinks>("link");
     this.restaurantId = new ObjectId("6874cff2a880250859286de6");
   }
 
@@ -86,6 +92,35 @@ export class MongoStorage implements IStorage {
       console.log(`[Storage] Creating missing collection: customers in customersdb`);
       await this.customersDb.createCollection("customers");
     }
+
+    // Ensure socialsandcontact.link collection exists and has a seed document
+    const socialsCollections = await this.socialsDb.listCollections().toArray();
+    const socialsExistingNames = socialsCollections.map(c => c.name);
+
+    if (!socialsExistingNames.includes("link")) {
+      console.log(`[Storage] Creating missing collection: link in socialsandcontact`);
+      await this.socialsDb.createCollection("link");
+    }
+
+    const existingLinks = await this.linksCollection.findOne({});
+    if (!existingLinks) {
+      console.log(`[Storage] Seeding default social links document`);
+      await this.linksCollection.insertOne({
+        instagram: "https://www.instagram.com/barrelborn_?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==",
+        facebook: "https://facebook.com",
+        youtube: "https://youtube.com",
+        googleReview: "https://g.page/r/CbKAeLOlg005EBM/review",
+        locate: "https://maps.app.goo.gl/C7K6BijrGrvWTXyBA",
+        call: "tel:+918278251111",
+        whatsapp: "https://wa.me/918278251111",
+        email: "mailto:info@barrelborn.in",
+        website: "https://www.atdigitalmenu.com",
+      } as any);
+    }
+  }
+
+  async getSocialLinks(): Promise<SocialLinks | null> {
+    return await this.linksCollection.findOne({});
   }
 
   async getUser(id: string): Promise<User | undefined> {

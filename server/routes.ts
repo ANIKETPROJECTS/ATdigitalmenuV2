@@ -150,6 +150,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Social links route
+  app.get("/api/social-links", async (req, res) => {
+    try {
+      const links = await storage.getSocialLinks();
+      if (!links) return res.status(404).json({ message: "Social links not found" });
+      res.json(links);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch social links" });
+    }
+  });
+
   // Get categories
   app.get("/api/categories", async (req, res) => {
     try {

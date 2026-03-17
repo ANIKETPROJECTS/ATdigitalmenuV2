@@ -15,6 +15,31 @@ import mapsImg from "@assets/logo_(1)_1773390711534.png";
 import callImg from "@assets/call_1773390891033.png";
 import mailImg from "@assets/communication_1773390476300.png";
 import whatsappImg from "@assets/apple_1773515172898.png";
+import { useQuery } from "@tanstack/react-query";
+
+interface SocialLinks {
+  instagram: string;
+  facebook: string;
+  youtube: string;
+  googleReview: string;
+  locate: string;
+  call: string;
+  whatsapp: string;
+  email: string;
+  website: string;
+}
+
+const DEFAULT_LINKS: SocialLinks = {
+  instagram: "https://www.instagram.com/barrelborn_?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==",
+  facebook: "https://facebook.com",
+  youtube: "https://youtube.com",
+  googleReview: "https://g.page/r/CbKAeLOlg005EBM/review",
+  locate: "https://maps.app.goo.gl/C7K6BijrGrvWTXyBA",
+  call: "tel:+918278251111",
+  whatsapp: "https://wa.me/918278251111",
+  email: "mailto:info@barrelborn.in",
+  website: "https://www.atdigitalmenu.com",
+};
 
 function ThemeToggle() {
   const { isDark, toggleTheme } = useTheme();
@@ -39,7 +64,6 @@ function ThemeToggle() {
       data-testid="button-theme-toggle"
     >
       {isDark ? (
-        /* Dark mode — moon circle on left, text on right */
         <>
           <div
             className="flex items-center justify-center rounded-full flex-shrink-0"
@@ -76,7 +100,6 @@ function ThemeToggle() {
           </span>
         </>
       ) : (
-        /* Light mode — text on left, sun circle on right */
         <>
           <span
             className="flex-1 text-center font-bold"
@@ -132,6 +155,12 @@ export default function Welcome() {
   const { t } = useLanguage();
   const { isDark } = useTheme();
 
+  const { data: linksData } = useQuery<SocialLinks>({
+    queryKey: ["/api/social-links"],
+  });
+
+  const links: SocialLinks = linksData ?? DEFAULT_LINKS;
+
   const handleExploreMenu = () => {
     playWelcomeAudio();
     setLocation("/menu");
@@ -142,10 +171,6 @@ export default function Welcome() {
     if (newWindow) {
       (document.activeElement as HTMLElement)?.blur();
     }
-  }, []);
-
-  const handleReviewClick = useCallback(() => {
-    window.open("https://g.page/r/CbKAeLOlg005EBM/review", "_blank", "noopener,noreferrer");
   }, []);
 
   const labelColor = isDark ? "#FFFFFF" : "var(--bb-text)";
@@ -211,20 +236,23 @@ export default function Welcome() {
         {/* Social icons row */}
         <div className="flex items-center gap-6">
           <button
-            onClick={() => handleSocialClick("https://www.instagram.com/barrelborn_?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==")}
+            onClick={() => handleSocialClick(links.instagram)}
             className="transition-opacity hover:opacity-80"
+            data-testid="button-social-instagram"
           >
             <img src={instaImg} alt="Instagram" className="w-12 h-12 rounded-xl object-cover" />
           </button>
           <button
-            onClick={() => handleSocialClick("https://facebook.com")}
+            onClick={() => handleSocialClick(links.facebook)}
             className="transition-opacity hover:opacity-80"
+            data-testid="button-social-facebook"
           >
             <img src={fbImg} alt="Facebook" className="w-12 h-12 rounded-xl object-cover" />
           </button>
           <button
-            onClick={() => handleSocialClick("https://youtube.com")}
+            onClick={() => handleSocialClick(links.youtube)}
             className="transition-opacity hover:opacity-80"
+            data-testid="button-social-youtube"
           >
             <img src={ytImg} alt="YouTube" className="w-12 h-12 rounded-xl object-cover" />
           </button>
@@ -236,7 +264,11 @@ export default function Welcome() {
             Click To Rate Us
           </p>
           <div style={{ overflow: "hidden", height: "62px" }}>
-            <button onClick={handleReviewClick} className="hover:opacity-80 transition-opacity">
+            <button
+              onClick={() => handleSocialClick(links.googleReview)}
+              className="hover:opacity-80 transition-opacity"
+              data-testid="button-google-review"
+            >
               <img
                 src={googleReviewImg}
                 alt="Rate us on Google"
@@ -255,28 +287,32 @@ export default function Welcome() {
         <div className="flex items-start justify-center gap-4">
           <button
             className="flex flex-col items-center gap-0.5 transition-opacity hover:opacity-80"
-            onClick={() => window.open("https://maps.app.goo.gl/C7K6BijrGrvWTXyBA", "_blank")}
+            onClick={() => handleSocialClick(links.locate)}
+            data-testid="button-connect-locate"
           >
             <img src={mapsImg} alt="Google Maps" className="w-12 h-12 rounded-lg object-cover" />
             <span className="text-xs font-medium" style={{ color: labelColor }}>LOCATE</span>
           </button>
           <button
             className="flex flex-col items-center gap-0.5 transition-opacity hover:opacity-80"
-            onClick={() => window.open("tel:+918278251111")}
+            onClick={() => handleSocialClick(links.call)}
+            data-testid="button-connect-call"
           >
             <img src={callImg} alt="Call" className="w-12 h-12 rounded-full object-cover" />
             <span className="text-xs font-medium" style={{ color: labelColor }}>CALL</span>
           </button>
           <button
             className="flex flex-col items-center gap-0.5 transition-opacity hover:opacity-80"
-            onClick={() => window.open("https://wa.me/918278251111", "_blank")}
+            onClick={() => handleSocialClick(links.whatsapp)}
+            data-testid="button-connect-chat"
           >
             <img src={whatsappImg} alt="WhatsApp" className="w-12 h-12 rounded-xl object-cover" />
             <span className="text-xs font-medium" style={{ color: labelColor }}>CHAT</span>
           </button>
           <button
             className="flex flex-col items-center gap-0.5 transition-opacity hover:opacity-80"
-            onClick={() => window.open("mailto:info@barrelborn.in")}
+            onClick={() => handleSocialClick(links.email)}
+            data-testid="button-connect-email"
           >
             <img src={mailImg} alt="Email" className="w-12 h-12 rounded-lg object-cover" />
             <span className="text-xs font-medium" style={{ color: labelColor }}>EMAIL</span>
@@ -287,9 +323,10 @@ export default function Welcome() {
         <p
           className="cursor-pointer text-xs font-normal tracking-widest"
           style={{ color: labelColor, textTransform: "lowercase", opacity: 0.7 }}
-          onClick={() => window.open("https://www.atdigitalmenu.com", "_blank")}
+          onClick={() => handleSocialClick(links.website)}
+          data-testid="text-website-footer"
         >
-          www.atdigitalmenu.com
+          {links.website.replace(/^https?:\/\//, "")}
         </p>
 
       </div>

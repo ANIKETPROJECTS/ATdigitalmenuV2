@@ -43,6 +43,19 @@ export interface Customer {
   updatedAt: Date;
 }
 
+export interface SocialLinks {
+  _id: ObjectId;
+  instagram: string;
+  facebook: string;
+  youtube: string;
+  googleReview: string;
+  locate: string;
+  call: string;
+  whatsapp: string;
+  email: string;
+  website: string;
+}
+
 // Zod schemas for validation
 export const insertMenuItemSchema = z.object({
   name: z.string().min(1),
