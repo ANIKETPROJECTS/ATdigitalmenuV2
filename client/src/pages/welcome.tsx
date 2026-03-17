@@ -212,13 +212,19 @@ export default function Welcome() {
       <div className="flex flex-col items-center w-full flex-1 px-0 pt-0 pb-0 gap-3 justify-start">
 
         {/* Logo */}
-        <div className="w-full flex justify-center" style={{ paddingTop: "6px" }}>
+        <div
+          className="w-full flex justify-center"
+          style={{ paddingTop: "6px", maxHeight: "220px", overflow: "hidden" }}
+        >
           <img
             src={logoSrc}
             alt="AT Digital Menu"
             style={{
               width: "360px",
+              maxWidth: "100%",
+              maxHeight: "220px",
               objectFit: "contain",
+              objectPosition: "center bottom",
               filter: "none",
             }}
           />
@@ -232,7 +238,7 @@ export default function Welcome() {
             background: "linear-gradient(90deg, #d4af37, #e6c55a)",
             border: "none",
             color: "#3D3100",
-            marginTop: "-38px",
+            marginTop: "8px",
             boxShadow: isDark
               ? "inset 0 0 0 2px #3D3100, 0 0 0 2px #FFFFFF, 0 0 0 4px #d4af37"
               : "inset 0 0 0 2px rgba(0,0,0,0.1), 0 0 0 2px #FFFFFF, 0 0 0 4px #d4af37",
