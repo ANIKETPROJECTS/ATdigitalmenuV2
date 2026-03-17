@@ -666,21 +666,26 @@ export default function MenuLanding() {
           </div>
         </div>
 
-        {/* Coupon Auto-Scroll Carousel — directly below image banner */}
-        <div className="py-3 mb-3 overflow-hidden">
-          <div
-            className="coupon-track flex gap-4"
-            style={{ width: "max-content" }}
-          >
-            {[...coupons, ...coupons].map((coupon, index) => (
-              <CouponCard
-                key={`${coupon.code}-${index}`}
-                coupon={coupon}
-                onClick={() => setShowCoupons(true)}
-              />
-            ))}
+        {/* Coupon Auto-Scroll Carousel — only rendered when at least 1 coupon is visible */}
+        {coupons.length > 0 && (
+          <div className="py-3 mb-3 overflow-hidden">
+            <div
+              className="coupon-track flex gap-4"
+              style={{ width: "max-content" }}
+            >
+              {/* Repeat enough times to always fill the viewport smoothly */}
+              {Array.from({ length: Math.max(2, Math.ceil(6 / coupons.length)) })
+                .flatMap(() => coupons)
+                .map((coupon, index) => (
+                  <CouponCard
+                    key={`${coupon.code}-${index}`}
+                    coupon={coupon}
+                    onClick={() => setShowCoupons(true)}
+                  />
+                ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           {mainCategories

@@ -69,7 +69,6 @@ export interface Coupon {
   subtitle: string;
   description: string;
   validity: string;
-  gradient: [string, string];
   tag: string;
   show: boolean;
 }
