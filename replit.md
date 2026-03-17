@@ -41,6 +41,19 @@ The application follows a traditional client-server architecture with clear sepa
     -   **Vercel**: Frontend static files served via CDN, backend as serverless functions (api/ directory).
 -   **Configuration**: Environment variables (e.g., MONGODB_URI), static file serving, API routes.
 
+## Required Environment Variables (Secrets)
+
+These must be configured as Replit Secrets for the app to work:
+
+| Secret Key | Description | Where to find |
+|---|---|---|
+| `MONGODB_URI` | MongoDB Atlas connection string | `ecosystem.config.cjs` → `env.MONGODB_URI` |
+| `SESSION_SECRET` | Express session secret key | `ecosystem.config.cjs` → `env.SESSION_SECRET` |
+
+**MongoDB URI format:** `mongodb+srv://<user>:<password>@<cluster>.mongodb.net/?appName=atdigitalmenu`
+
+> On fresh import: open `ecosystem.config.cjs`, copy the `MONGODB_URI` and `SESSION_SECRET` values, and add them as Replit Secrets (lock icon in sidebar).
+
 ## External Dependencies
 
 ### Frontend Dependencies
