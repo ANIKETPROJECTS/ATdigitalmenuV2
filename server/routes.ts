@@ -294,6 +294,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Restaurant info routes
+  app.get("/api/restaurant-info", async (req, res) => {
+    try {
+      const info = await storage.getRestaurantInfo();
+      if (!info) return res.status(404).json({ message: "Restaurant info not found" });
+      res.json(info);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch restaurant info" });
+    }
+  });
+
+  app.patch("/api/restaurant-info", async (req, res) => {
+    try {
+      const updated = await storage.updateRestaurantInfo(req.body);
+      if (!updated) return res.status(404).json({ message: "Restaurant info not found" });
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update restaurant info" });
+    }
+  });
+
   // Fix veg/non-veg classification
   app.post("/api/fix-veg-classification", async (req, res) => {
     try {

@@ -1,5 +1,5 @@
 import { MongoClient, Db, Collection, ObjectId } from "mongodb";
-import { type User, type InsertUser, type MenuItem, type InsertMenuItem, type CartItem, type InsertCartItem, type Customer, type InsertCustomer, type SocialLinks, type WelcomeScreenUI, type Coupon, type CarouselImage, type Logo, type MenuCategory, type Reservation, type InsertReservation, type PaymentDetails, type CallWaiter } from "@shared/schema";
+import { type User, type InsertUser, type MenuItem, type InsertMenuItem, type CartItem, type InsertCartItem, type Customer, type InsertCustomer, type SocialLinks, type WelcomeScreenUI, type Coupon, type CarouselImage, type Logo, type MenuCategory, type Reservation, type InsertReservation, type PaymentDetails, type CallWaiter, type RestaurantInfo } from "@shared/schema";
 
 type UpdateMenuItemFlags = {
   todaysSpecial?: boolean;
@@ -47,6 +47,7 @@ export interface IStorage {
   setCallWaiterStatus(called: boolean): Promise<CallWaiter>;
 
   getRestaurantInfo(): Promise<RestaurantInfo | null>;
+  updateRestaurantInfo(data: Partial<Omit<RestaurantInfo, '_id'>>): Promise<RestaurantInfo | null>;
 }
 
 export class MongoStorage implements IStorage {
@@ -112,7 +113,7 @@ export class MongoStorage implements IStorage {
     this.reservationCollection = this.hamburgerDb.collection<Reservation>("reservation");
     this.paymentDetailsCollection = this.hamburgerDb.collection<PaymentDetails>("paymentdetails");
     this.callWaiterCollection = this.menuPageDb.collection<CallWaiter>("callwaiter");
-    this.restaurantInfoCollection = this.hamburgerDb.collection<RestaurantInfo>("RestaurantInfo");
+    this.restaurantInfoCollection = this.hamburgerDb.collection<RestaurantInfo>("restaurantinfo");
     this.restaurantId = new ObjectId("6874cff2a880250859286de6");
   }
 
@@ -422,6 +423,26 @@ export class MongoStorage implements IStorage {
       console.log(`[Storage] Seeding default payment details into hamburger.paymentdetails`);
       await this.paymentDetailsCollection.insertOne({ upiId: "atdigitalmenu@upi" } as any);
     }
+
+    // Ensure hamburger.restaurantinfo collection exists and is seeded
+    if (!hamburgerExistingNames.includes("restaurantinfo")) {
+      console.log(`[Storage] Creating missing collection: restaurantinfo in hamburger`);
+      await this.hamburgerDb.createCollection("restaurantinfo");
+    }
+
+    const existingRestaurantInfo = await this.restaurantInfoCollection.findOne({});
+    if (!existingRestaurantInfo) {
+      console.log(`[Storage] Seeding default restaurantinfo into hamburger.restaurantinfo`);
+      await this.restaurantInfoCollection.insertOne({
+        location: { name: "Barrelborn", subtext: "Thane, Maharashtra" },
+        contact: { name: "+91 9619523254", subtext: "For Reservations and Orders" },
+        hours: { name: "11:00 AM – 11:30 PM", subtext: "Open All Days" },
+        instagram: { name: "@barrelborn_", subtext: "Follow Us for Updates" },
+        facebook: { name: "Barrelborn", subtext: "Follow on Facebook" },
+        youtube: { name: "Barrelborn", subtext: "Watch on YouTube" },
+        whatsapp: { name: "+91 8278251111", subtext: "Chat on WhatsApp" },
+      } as any);
+    }
   }
 
   async getSocialLinks(): Promise<SocialLinks | null> {
@@ -660,6 +681,21 @@ export class MongoStorage implements IStorage {
 
   async getPaymentDetails(): Promise<PaymentDetails | null> {
     return await this.paymentDetailsCollection.findOne({});
+  }
+
+  async getRestaurantInfo(): Promise<RestaurantInfo | null> {
+    return await this.restaurantInfoCollection.findOne({});
+  }
+
+  async updateRestaurantInfo(data: Partial<Omit<RestaurantInfo, '_id'>>): Promise<RestaurantInfo | null> {
+    const existing = await this.restaurantInfoCollection.findOne({});
+    if (!existing) return null;
+    const updated = await this.restaurantInfoCollection.findOneAndUpdate(
+      { _id: existing._id },
+      { $set: data },
+      { returnDocument: 'after' }
+    );
+    return updated;
   }
 
   async getCallWaiterStatus(): Promise<CallWaiter | null> {

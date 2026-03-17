@@ -5,7 +5,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import type { MenuCategory, PaymentDetails } from "@shared/schema";
+import type { MenuCategory, PaymentDetails, RestaurantInfo, SocialLinks } from "@shared/schema";
 import Lottie from "lottie-react";
 // @ts-ignore
 import confirmationAnimation from "@assets/Confirmation_1773569485933.json";
@@ -323,6 +323,14 @@ export default function HamburgerMenu({
     queryKey: ["/api/payment-details"],
   });
 
+  const { data: restaurantInfo } = useQuery<RestaurantInfo>({
+    queryKey: ["/api/restaurant-info"],
+  });
+
+  const { data: socialLinks } = useQuery<SocialLinks>({
+    queryKey: ["/api/social-links"],
+  });
+
   const upiId = paymentDetails?.upiId ?? "";
 
   const handleCategoryClick = (categoryId: string) => {
@@ -516,74 +524,71 @@ export default function HamburgerMenu({
                   <div className="flex items-center gap-3">
                     <img src={mapsImg} alt="Location" className="w-10 h-10 object-contain flex-shrink-0" />
                     <div>
-                      <p className="text-sm font-bold" style={{ color: isDark ? "#FFFFFF" : "#1a1a1a", fontFamily: "'DM Sans', sans-serif" }}>atdigitalmenu</p>
-                      <p className="text-xs mt-0.5" style={{ color: isDark ? "#FFFFFF" : "#555555", fontFamily: "'DM Sans', sans-serif" }}>Thane, Maharashtra</p>
+                      <p className="text-sm font-bold" style={{ color: isDark ? "#FFFFFF" : "#1a1a1a", fontFamily: "'DM Sans', sans-serif" }}>{restaurantInfo?.location?.name ?? "Barrelborn"}</p>
+                      <p className="text-xs mt-0.5" style={{ color: isDark ? "#FFFFFF" : "#555555", fontFamily: "'DM Sans', sans-serif" }}>{restaurantInfo?.location?.subtext ?? "Thane, Maharashtra"}</p>
                     </div>
                   </div>
                   {/* Contact */}
                   <div className="flex items-center gap-3">
                     <img src={callImg} alt="Call" className="w-10 h-10 object-contain rounded-full flex-shrink-0" />
                     <div>
-                      <p className="text-xs font-semibold tracking-wide uppercase mb-0.5" style={{ color: isDark ? "#FFFFFF" : "#1a1a1a", fontFamily: "'DM Sans', sans-serif" }}>
-                        {t.contactUs}
-                      </p>
-                      <button onClick={() => window.open(`tel:${PHONE.replace(/\s/g, "")}`, "_self")}
+                      <button onClick={() => window.open(socialLinks?.call ?? `tel:${PHONE.replace(/\s/g, "")}`, "_self")}
                         className="text-sm font-bold transition-opacity hover:opacity-80" style={{ color: isDark ? "#FFFFFF" : "#1a1a1a", fontFamily: "'DM Sans', sans-serif" }}>
-                        {PHONE}
+                        {restaurantInfo?.contact?.name ?? PHONE}
                       </button>
-                      <p className="text-[10px] mt-0.5" style={{ color: isDark ? "#FFFFFF" : "#555555", fontFamily: "'DM Sans', sans-serif" }}>{t.forReservations}</p>
+                      <p className="text-[10px] mt-0.5" style={{ color: isDark ? "#FFFFFF" : "#555555", fontFamily: "'DM Sans', sans-serif" }}>{restaurantInfo?.contact?.subtext ?? t.forReservations}</p>
                     </div>
                   </div>
                   {/* Hours */}
                   <div className="flex items-center gap-3">
                     <img src={clockImg} alt="Hours" className="w-10 h-10 object-contain flex-shrink-0" />
                     <div>
-                      <p className="text-sm font-bold" style={{ color: isDark ? "#FFFFFF" : "#1a1a1a", fontFamily: "'DM Sans', sans-serif" }}>11:00 AM – 11:30 PM</p>
-                      <p className="text-[10px] mt-0.5" style={{ color: isDark ? "#FFFFFF" : "#555555", fontFamily: "'DM Sans', sans-serif" }}>{t.openAllDays}</p>
+                      <p className="text-sm font-bold" style={{ color: isDark ? "#FFFFFF" : "#1a1a1a", fontFamily: "'DM Sans', sans-serif" }}>{restaurantInfo?.hours?.name ?? "11:00 AM – 11:30 PM"}</p>
+                      <p className="text-[10px] mt-0.5" style={{ color: isDark ? "#FFFFFF" : "#555555", fontFamily: "'DM Sans', sans-serif" }}>{restaurantInfo?.hours?.subtext ?? t.openAllDays}</p>
                     </div>
                   </div>
                   {/* Instagram */}
                   <div className="flex items-center gap-3">
                     <img src={instaImg} alt="Instagram" className="w-10 h-10 object-contain rounded-xl flex-shrink-0" />
                     <div>
-                      <button onClick={() => window.open("https://www.instagram.com/atdigitalmenu", "_blank", "noopener,noreferrer")}
+                      <button onClick={() => window.open(socialLinks?.instagram ?? "https://www.instagram.com", "_blank", "noopener,noreferrer")}
                         className="text-sm font-bold flex items-center gap-1 transition-opacity hover:opacity-80" style={{ color: isDark ? "#FFFFFF" : "#1a1a1a", fontFamily: "'DM Sans', sans-serif" }}>
-                        @atdigitalmenu <ExternalLink className="w-3 h-3" style={{ color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.3)" }} />
+                        {restaurantInfo?.instagram?.name ?? "@barrelborn_"} <ExternalLink className="w-3 h-3" style={{ color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.3)" }} />
                       </button>
-                      <p className="text-[10px] mt-0.5" style={{ color: isDark ? "#FFFFFF" : "#555555", fontFamily: "'DM Sans', sans-serif" }}>{t.followForUpdates}</p>
+                      <p className="text-[10px] mt-0.5" style={{ color: isDark ? "#FFFFFF" : "#555555", fontFamily: "'DM Sans', sans-serif" }}>{restaurantInfo?.instagram?.subtext ?? t.followForUpdates}</p>
                     </div>
                   </div>
                   {/* Facebook */}
                   <div className="flex items-center gap-3">
                     <img src={fbImg} alt="Facebook" className="w-10 h-10 object-contain rounded-xl flex-shrink-0" />
                     <div>
-                      <button onClick={() => window.open("https://facebook.com/atdigitalmenu", "_blank", "noopener,noreferrer")}
+                      <button onClick={() => window.open(socialLinks?.facebook ?? "https://facebook.com", "_blank", "noopener,noreferrer")}
                         className="text-sm font-bold flex items-center gap-1 transition-opacity hover:opacity-80" style={{ color: isDark ? "#FFFFFF" : "#1a1a1a", fontFamily: "'DM Sans', sans-serif" }}>
-                        atdigitalmenu <ExternalLink className="w-3 h-3" style={{ color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.3)" }} />
+                        {restaurantInfo?.facebook?.name ?? "Barrelborn"} <ExternalLink className="w-3 h-3" style={{ color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.3)" }} />
                       </button>
-                      <p className="text-[10px] mt-0.5" style={{ color: isDark ? "#FFFFFF" : "#555555", fontFamily: "'DM Sans', sans-serif" }}>Follow on Facebook</p>
+                      <p className="text-[10px] mt-0.5" style={{ color: isDark ? "#FFFFFF" : "#555555", fontFamily: "'DM Sans', sans-serif" }}>{restaurantInfo?.facebook?.subtext ?? "Follow on Facebook"}</p>
                     </div>
                   </div>
                   {/* YouTube */}
                   <div className="flex items-center gap-3">
                     <img src={ytImg} alt="YouTube" className="w-10 h-10 object-contain rounded-xl flex-shrink-0" />
                     <div>
-                      <button onClick={() => window.open("https://youtube.com/@atdigitalmenu", "_blank", "noopener,noreferrer")}
+                      <button onClick={() => window.open(socialLinks?.youtube ?? "https://youtube.com", "_blank", "noopener,noreferrer")}
                         className="text-sm font-bold flex items-center gap-1 transition-opacity hover:opacity-80" style={{ color: isDark ? "#FFFFFF" : "#1a1a1a", fontFamily: "'DM Sans', sans-serif" }}>
-                        atdigitalmenu <ExternalLink className="w-3 h-3" style={{ color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.3)" }} />
+                        {restaurantInfo?.youtube?.name ?? "Barrelborn"} <ExternalLink className="w-3 h-3" style={{ color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.3)" }} />
                       </button>
-                      <p className="text-[10px] mt-0.5" style={{ color: isDark ? "#FFFFFF" : "#555555", fontFamily: "'DM Sans', sans-serif" }}>Watch on YouTube</p>
+                      <p className="text-[10px] mt-0.5" style={{ color: isDark ? "#FFFFFF" : "#555555", fontFamily: "'DM Sans', sans-serif" }}>{restaurantInfo?.youtube?.subtext ?? "Watch on YouTube"}</p>
                     </div>
                   </div>
                   {/* WhatsApp */}
                   <div className="flex items-center gap-3">
                     <img src={whatsappImg} alt="WhatsApp" className="w-10 h-10 object-contain rounded-xl flex-shrink-0" />
                     <div>
-                      <button onClick={() => window.open("https://wa.me/919619523254", "_blank", "noopener,noreferrer")}
+                      <button onClick={() => window.open(socialLinks?.whatsapp ?? "https://wa.me/918278251111", "_blank", "noopener,noreferrer")}
                         className="text-sm font-bold flex items-center gap-1 transition-opacity hover:opacity-80" style={{ color: isDark ? "#FFFFFF" : "#1a1a1a", fontFamily: "'DM Sans', sans-serif" }}>
-                        {PHONE} <ExternalLink className="w-3 h-3" style={{ color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.3)" }} />
+                        {restaurantInfo?.whatsapp?.name ?? "+91 8278251111"} <ExternalLink className="w-3 h-3" style={{ color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.3)" }} />
                       </button>
-                      <p className="text-[10px] mt-0.5" style={{ color: isDark ? "#FFFFFF" : "#555555", fontFamily: "'DM Sans', sans-serif" }}>Chat on WhatsApp</p>
+                      <p className="text-[10px] mt-0.5" style={{ color: isDark ? "#FFFFFF" : "#555555", fontFamily: "'DM Sans', sans-serif" }}>{restaurantInfo?.whatsapp?.subtext ?? "Chat on WhatsApp"}</p>
                     </div>
                   </div>
                 </div>
