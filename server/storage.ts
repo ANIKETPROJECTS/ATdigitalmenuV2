@@ -1,5 +1,5 @@
 import { MongoClient, Db, Collection, ObjectId } from "mongodb";
-import { type User, type InsertUser, type MenuItem, type InsertMenuItem, type CartItem, type InsertCartItem, type Customer, type InsertCustomer, type SocialLinks, type WelcomeScreenUI, type Coupon, type CarouselImage, type Logo } from "@shared/schema";
+import { type User, type InsertUser, type MenuItem, type InsertMenuItem, type CartItem, type InsertCartItem, type Customer, type InsertCustomer, type SocialLinks, type WelcomeScreenUI, type Coupon, type CarouselImage, type Logo, type MenuCategory } from "@shared/schema";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -27,6 +27,7 @@ export interface IStorage {
   getCoupons(): Promise<Coupon[]>;
   getCarouselImages(): Promise<CarouselImage[]>;
   getLogo(): Promise<Logo | null>;
+  getMenuCategories(): Promise<MenuCategory[]>;
 
   clearDatabase(): Promise<void>;
   fixVegNonVegClassification(): Promise<{ updated: number; details: string[] }>;
@@ -48,6 +49,7 @@ export class MongoStorage implements IStorage {
   private couponsCollection: Collection<Coupon>;
   private carouselCollection: Collection<CarouselImage>;
   private logoCollection: Collection<Logo>;
+  private categoriesCollection: Collection<MenuCategory>;
   private restaurantId: ObjectId;
 
   private readonly categories = [
@@ -84,6 +86,7 @@ export class MongoStorage implements IStorage {
     this.couponsCollection = this.menuPageDb.collection<Coupon>("coupons");
     this.carouselCollection = this.menuPageDb.collection<CarouselImage>("carousel");
     this.logoCollection = this.menuPageDb.collection<Logo>("logo");
+    this.categoriesCollection = this.menuPageDb.collection<MenuCategory>("categories");
     this.restaurantId = new ObjectId("6874cff2a880250859286de6");
   }
 
@@ -244,6 +247,123 @@ export class MongoStorage implements IStorage {
         },
       ] as any[]);
     }
+
+    // Ensure menupage.categories collection exists and is seeded with defaults
+    if (!menuPageExistingNames.includes("categories")) {
+      console.log(`[Storage] Creating missing collection: categories in menupage`);
+      await this.menuPageDb.createCollection("categories");
+    }
+
+    const existingCategories = await this.categoriesCollection.countDocuments();
+    if (existingCategories === 0) {
+      console.log(`[Storage] Seeding default categories into menupage.categories`);
+      await this.categoriesCollection.insertMany([
+        {
+          id: "food",
+          title: "FOOD",
+          image: "",
+          order: 1,
+          subcategories: [
+            { id: "nibbles", title: "Nibbles", image: "", subcategories: [] },
+            { id: "soups", title: "Soups", image: "", subcategories: [] },
+            { id: "titbits", title: "Titbits", image: "", subcategories: [] },
+            { id: "salads", title: "Salads", image: "", subcategories: [] },
+            { id: "mangalorean-style", title: "Mangalorean Style", image: "", subcategories: [] },
+            { id: "wok", title: "Wok", image: "", subcategories: [] },
+            { id: "charcoal", title: "Charcoal", image: "", subcategories: [] },
+            { id: "continental", title: "Continental", image: "", subcategories: [] },
+            { id: "pasta", title: "Pasta", image: "", subcategories: [] },
+            { id: "artisan-pizzas", title: "Artisan Pizzas", image: "", subcategories: [] },
+            { id: "mini-burger-sliders", title: "Mini Burger Sliders", image: "", subcategories: [] },
+            { id: "entree", title: "Entree (Main Course)", image: "", subcategories: [] },
+            { id: "bao-dimsum", title: "Bao & Dim Sum", image: "", subcategories: [] },
+            { id: "indian-mains-curries", title: "Indian Mains - Curries", image: "", subcategories: [] },
+            { id: "biryanis-rice", title: "Biryanis & Rice", image: "", subcategories: [] },
+            { id: "dals", title: "Dals", image: "", subcategories: [] },
+            { id: "breads", title: "Breads", image: "", subcategories: [] },
+            { id: "asian-mains", title: "Asian Mains", image: "", subcategories: [] },
+            { id: "rice-with-curry---thai-asian-bowls", title: "Rice with Curry - Thai & Asian Bowls", image: "", subcategories: [] },
+            { id: "rice-noodles", title: "Rice & Noodles", image: "", subcategories: [] },
+            { id: "sizzlers", title: "Sizzlers", image: "", subcategories: [] },
+          ],
+        },
+        {
+          id: "crafted-beer",
+          title: "CRAFT BEERS",
+          image: "",
+          order: 2,
+          subcategories: [
+            { id: "craft-beers-on-tap", title: "Craft Beers On Tap", image: "", subcategories: [] },
+            { id: "draught-beer", title: "Draught Beer", image: "", subcategories: [] },
+            { id: "pint-beers", title: "Pint Beers", image: "", subcategories: [] },
+          ],
+        },
+        {
+          id: "cocktails",
+          title: "COCKTAILS",
+          image: "",
+          order: 3,
+          subcategories: [
+            { id: "classic-cocktails", title: "Classic Cocktails", image: "", subcategories: [] },
+            { id: "signature-cocktails", title: "Signature Cocktails", image: "", subcategories: [] },
+            { id: "wine-cocktails", title: "Wine Cocktails", image: "", subcategories: [] },
+            { id: "sangria", title: "Sangria", image: "", subcategories: [] },
+            { id: "beer-cocktail", title: "Beer Cocktail", image: "", subcategories: [] },
+            { id: "signature-shots", title: "Signature Shots", image: "", subcategories: [] },
+          ],
+        },
+        {
+          id: "bar",
+          title: "BAR",
+          image: "",
+          order: 4,
+          subcategories: [
+            { id: "blended-whisky", title: "Blended Whisky", image: "", subcategories: [] },
+            { id: "blended-scotch-whisky", title: "Blended Scotch Whisky", image: "", subcategories: [] },
+            { id: "american-irish-whiskey", title: "American & Irish Whiskey", image: "", subcategories: [] },
+            { id: "single-malt-whisky", title: "Single Malt Whisky", image: "", subcategories: [] },
+            { id: "vodka", title: "Vodka", image: "", subcategories: [] },
+            { id: "gin", title: "Gin", image: "", subcategories: [] },
+            { id: "rum", title: "Rum", image: "", subcategories: [] },
+            { id: "tequila", title: "Tequila", image: "", subcategories: [] },
+            { id: "cognac-brandy", title: "Cognac & Brandy", image: "", subcategories: [] },
+            { id: "liqueurs", title: "Liqueurs", image: "", subcategories: [] },
+            {
+              id: "wine",
+              title: "Wine",
+              image: "",
+              subcategories: [
+                { id: "sparkling-wine", title: "Sparkling Wine", image: "", subcategories: [] },
+                { id: "white-wines", title: "White Wines", image: "", subcategories: [] },
+                { id: "rose-wines", title: "Rosé Wines", image: "", subcategories: [] },
+                { id: "red-wines", title: "Red Wines", image: "", subcategories: [] },
+                { id: "dessert-wines", title: "Dessert Wines", image: "", subcategories: [] },
+                { id: "port-wine", title: "Port Wine", image: "", subcategories: [] },
+              ],
+            },
+          ],
+        },
+        {
+          id: "desserts",
+          title: "DESSERTS",
+          image: "",
+          order: 5,
+          subcategories: [
+            { id: "desserts", title: "Desserts", image: "", subcategories: [] },
+          ],
+        },
+        {
+          id: "mocktails",
+          title: "MOCKTAILS",
+          image: "",
+          order: 6,
+          subcategories: [
+            { id: "signature-mocktails", title: "Signature Mocktails", image: "", subcategories: [] },
+            { id: "soft-beverages", title: "Soft Beverages", image: "", subcategories: [] },
+          ],
+        },
+      ] as any[]);
+    }
   }
 
   async getSocialLinks(): Promise<SocialLinks | null> {
@@ -264,6 +384,10 @@ export class MongoStorage implements IStorage {
 
   async getLogo(): Promise<Logo | null> {
     return await this.logoCollection.findOne({});
+  }
+
+  async getMenuCategories(): Promise<MenuCategory[]> {
+    return await this.categoriesCollection.find({}).sort({ order: 1 }).toArray();
   }
 
   async getUser(id: string): Promise<User | undefined> {

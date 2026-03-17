@@ -1,10 +1,11 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, QrCode, Copy, Check, ExternalLink, Utensils, Users, ChevronDown, ChevronRight } from "lucide-react";
-import { mainCategories } from "@/lib/menu-categories";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { categoryTranslationMap } from "@/lib/translations";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import type { MenuCategory } from "@shared/schema";
 import Lottie from "lottie-react";
 // @ts-ignore
 import confirmationAnimation from "@assets/Confirmation_1773569485933.json";
@@ -310,6 +311,10 @@ export default function HamburgerMenu({
   const [showQr, setShowQr] = useState(false);
   const [showReservation, setShowReservation] = useState(false);
 
+  const { data: menuCategories = [] } = useQuery<MenuCategory[]>({
+    queryKey: ["/api/menu-categories"],
+  });
+
   const handleCategoryClick = (categoryId: string) => {
     onCategoryClick(categoryId);
     onClose();
@@ -361,9 +366,9 @@ export default function HamburgerMenu({
 
               {/* ── Category Grid ── */}
               <div className="grid grid-cols-2 gap-2.5">
-                {mainCategories.filter((cat) => !cat.hidden).map((category, index) => {
+                {menuCategories.map((category, index) => {
                   const translationKey = categoryTranslationMap[category.id];
-                  const label = translationKey ? t[translationKey] : category.displayLabel;
+                  const label = translationKey ? t[translationKey] : category.title;
                   return (
                     <motion.button
                       key={category.id}

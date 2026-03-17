@@ -85,6 +85,22 @@ export interface Logo {
   url: string;
 }
 
+export interface MenuSubCategory {
+  id: string;
+  title: string;
+  image: string;
+  subcategories: MenuSubCategory[];
+}
+
+export interface MenuCategory {
+  _id: ObjectId;
+  id: string;
+  title: string;
+  image: string;
+  order: number;
+  subcategories: MenuSubCategory[];
+}
+
 // Zod schemas for validation
 export const insertMenuItemSchema = z.object({
   name: z.string().min(1),

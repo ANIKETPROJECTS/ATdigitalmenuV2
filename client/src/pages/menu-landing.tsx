@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { Coupon, CarouselImage } from "@shared/schema";
+import type { Coupon, CarouselImage, MenuCategory } from "@shared/schema";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
@@ -12,7 +12,6 @@ import {
 
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { mainCategories } from "@/lib/menu-categories";
 import { categoryTranslationMap } from "@/lib/translations";
 import HamburgerMenu from "@/components/hamburger-menu";
 import FloatingButtons from "@/components/floating-buttons";
@@ -326,6 +325,10 @@ export default function MenuLanding() {
 
   const { data: carouselImages = [] } = useQuery<CarouselImage[]>({
     queryKey: ["/api/carousel"],
+  });
+
+  const { data: menuCategories = [] } = useQuery<MenuCategory[]>({
+    queryKey: ["/api/menu-categories"],
   });
   const { data: logoData } = useQuery<Logo>({
     queryKey: ["/api/logo"],
@@ -685,13 +688,12 @@ export default function MenuLanding() {
         )}
 
         <div className="grid grid-cols-2 gap-3">
-          {mainCategories
-            .filter((cat) => cat.id !== "wine" && !cat.hidden)
-            .map((category, index) => {
+          {menuCategories.map((category, index) => {
               const translationKey = categoryTranslationMap[category.id];
-              const label = translationKey
-                ? t[translationKey]
-                : category.displayLabel;
+              const label = translationKey ? t[translationKey] : category.title;
+              const imgSrc = failedImages.has(category.id)
+                ? fallbackImg
+                : (category.image || categoryImages[category.id] || fallbackImg);
               return (
                 <motion.div
                   key={category.id}
@@ -719,11 +721,7 @@ export default function MenuLanding() {
                     data-testid={`tile-${category.id}`}
                   >
                     <img
-                      src={
-                        failedImages.has(category.id)
-                          ? fallbackImg
-                          : categoryImages[category.id]
-                      }
+                      src={imgSrc}
                       alt={label as string}
                       style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
                       className="transition-transform duration-500 group-hover:scale-110"

@@ -203,13 +203,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get categories
+  // Get categories (legacy - returns flat list of DB category strings)
   app.get("/api/categories", async (req, res) => {
     try {
       const categories = storage.getCategories();
       res.json(categories);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch categories" });
+    }
+  });
+
+  // Get menu categories (dynamic, from DB)
+  app.get("/api/menu-categories", async (req, res) => {
+    try {
+      const categories = await storage.getMenuCategories();
+      res.json(categories);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch menu categories" });
     }
   });
 

@@ -10,8 +10,29 @@ import ProductCard from "@/components/product-card";
 import HamburgerMenu from "@/components/hamburger-menu";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { categoryTranslationMap } from "@/lib/translations";
-import { getMainCategory, mainCategories } from "@/lib/menu-categories";
-import type { MenuItem } from "@shared/schema";
+import type { MenuItem, MenuCategory, MenuSubCategory } from "@shared/schema";
+
+type CategoryNode = (MenuCategory | MenuSubCategory) & { subcategories: MenuSubCategory[] };
+
+function findNodeInTree(categories: MenuCategory[], id: string): CategoryNode | null {
+  for (const cat of categories) {
+    if (cat.id === id) return cat as CategoryNode;
+    const found = findSubNode(cat.subcategories, id);
+    if (found) return found;
+  }
+  return null;
+}
+
+function findSubNode(subcategories: MenuSubCategory[], id: string): CategoryNode | null {
+  for (const sub of subcategories) {
+    if (sub.id === id) return sub as CategoryNode;
+    if (sub.subcategories?.length) {
+      const found = findSubNode(sub.subcategories, id);
+      if (found) return found;
+    }
+  }
+  return null;
+}
 
 interface ISpeechRecognitionEvent {
   results: SpeechRecognitionResultList;
@@ -172,7 +193,11 @@ export default function CategorySelection() {
   const [voiceSearchSupported, setVoiceSearchSupported] = useState(false);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
 
-  const mainCategory = getMainCategory(categoryId);
+  const { data: menuCategories = [], isLoading: isLoadingCategories } = useQuery<MenuCategory[]>({
+    queryKey: ["/api/menu-categories"],
+  });
+
+  const mainCategory = findNodeInTree(menuCategories, categoryId);
   const subcategories = mainCategory?.subcategories || [];
 
   const getInitialVegFilter = () => {
@@ -268,17 +293,25 @@ export default function CategorySelection() {
     }
   };
 
-  const handleSubcategoryClick = (subcategoryId: string) => {
-    if (subcategoryId === "wine") {
-      setLocation(`/menu/wine`);
+  const handleSubcategoryClick = (subcat: MenuSubCategory) => {
+    if (subcat.subcategories && subcat.subcategories.length > 0) {
+      setLocation(`/menu/${subcat.id}`);
     } else {
-      setLocation(`/menu/${categoryId}/${subcategoryId}`);
+      setLocation(`/menu/${categoryId}/${subcat.id}`);
     }
   };
 
   const handleCategoryClick = (catId: string) => {
     setLocation(`/menu/${catId}`);
   };
+
+  if (isLoadingCategories) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--bb-bg)" }}>
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: "var(--bb-gold)" }} />
+      </div>
+    );
+  }
 
   if (!mainCategory) {
     return (
@@ -349,7 +382,7 @@ export default function CategorySelection() {
             color: "var(--bb-gold)",
           }}
         >
-          {mainCategory.displayLabel}
+          {mainCategory.title}
         </h1>
 
         {(categoryId === "food" || categoryId === "bar") && (
@@ -466,7 +499,10 @@ export default function CategorySelection() {
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
             {filteredSubcategories.map((subcat, index) => {
               const translationKey = categoryTranslationMap[subcat.id];
-              const subcatLabel = translationKey ? t[translationKey] : subcat.displayLabel;
+              const subcatLabel = translationKey ? t[translationKey] : subcat.title;
+              const imgSrc = failedImages.has(subcat.id)
+                ? fallbackImg
+                : (subcat.image || subcategoryImages[subcat.id] || fallbackImg);
               return (
                 <motion.div
                   key={subcat.id}
@@ -482,7 +518,7 @@ export default function CategorySelection() {
                   }}
                 >
                   <button
-                    onClick={() => handleSubcategoryClick(subcat.id)}
+                    onClick={() => handleSubcategoryClick(subcat)}
                     className="group overflow-hidden relative"
                     style={{
                       borderRadius: "8px",
@@ -494,7 +530,7 @@ export default function CategorySelection() {
                     data-testid={`tile-${subcat.id}`}
                   >
                     <img
-                      src={failedImages.has(subcat.id) ? fallbackImg : (subcategoryImages[subcat.id] || signatureMocktailsImg)}
+                      src={imgSrc}
                       alt={subcatLabel as string}
                       style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
                       className="transition-transform duration-500 group-hover:scale-110"

@@ -20,8 +20,26 @@ import DishDetailModal from "@/components/dish-detail-modal";
 import FloatingButtons from "@/components/floating-buttons";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { categoryTranslationMap } from "@/lib/translations";
-import { getMainCategory } from "@/lib/menu-categories";
-import type { MenuItem } from "@shared/schema";
+import type { MenuItem, MenuCategory, MenuSubCategory } from "@shared/schema";
+
+function findSubcategoryNode(categories: MenuCategory[], categoryId: string, subcategoryId: string): MenuSubCategory | null {
+  for (const cat of categories) {
+    const found = searchSubs(cat.subcategories, subcategoryId);
+    if (found) return found;
+  }
+  return null;
+}
+
+function searchSubs(subs: MenuSubCategory[], id: string): MenuSubCategory | null {
+  for (const sub of subs) {
+    if (sub.id === id) return sub;
+    if (sub.subcategories?.length) {
+      const found = searchSubs(sub.subcategories, id);
+      if (found) return found;
+    }
+  }
+  return null;
+}
 
 interface ISpeechRecognitionEvent {
   results: SpeechRecognitionResultList;
@@ -58,6 +76,10 @@ export default function SubcategoryProducts() {
   const { t } = useLanguage();
   const { isDark } = useTheme();
 
+  const { data: menuCategories = [], isLoading: isLoadingCategories } = useQuery<MenuCategory[]>({
+    queryKey: ["/api/menu-categories"],
+  });
+
   // Get filter from URL params, fallback to localStorage
   const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
   const getInitialFilter = () => {
@@ -73,9 +95,9 @@ export default function SubcategoryProducts() {
     }
   };
 
-  const mainCategory = getMainCategory(categoryId);
-  const subcategories = mainCategory?.subcategories || [];
-  const currentSubcategory = subcategories.find(s => s.id === subcategoryId);
+  const currentSubcategory = menuCategories.length > 0
+    ? findSubcategoryNode(menuCategories, categoryId, subcategoryId)
+    : null;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isListening, setIsListening] = useState(false);
@@ -138,19 +160,15 @@ export default function SubcategoryProducts() {
     console.log("DETAILED CATEGORY DEBUG:", {
       categoryId,
       subcategoryId,
-      mainCategory: mainCategory?.displayLabel,
       currentSubcategory: currentSubcategory?.id,
-      dbCategory: currentSubcategory?.dbCategory,
-      displayLabel: currentSubcategory?.displayLabel,
+      title: currentSubcategory?.title,
       menuItemsCount: menuItems.length,
       firstItemCategory: menuItems[0]?.category,
       allItemCategories: Array.from(new Set(menuItems.map(item => item.category))),
     });
-  }, [menuItems, currentSubcategory, categoryId, subcategoryId, mainCategory]);
+  }, [menuItems, currentSubcategory, categoryId, subcategoryId]);
 
   const filteredItems = useMemo(() => {
-    const dbCategory = currentSubcategory?.dbCategory;
-    
     let filtered = menuItems;
     
     // Apply availability filter
@@ -183,7 +201,7 @@ export default function SubcategoryProducts() {
     }
   };
 
-  if (!mainCategory || !currentSubcategory) {
+  if (!isLoadingCategories && !currentSubcategory) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--bb-bg)" }}>
         <p style={{ color: "var(--bb-text)" }}>Category not found</p>
@@ -216,9 +234,10 @@ export default function SubcategoryProducts() {
                   fontFamily: "'DM Sans', sans-serif",
                 }}
               >
-                {(categoryTranslationMap[currentSubcategory.id]
+                {(currentSubcategory && (categoryTranslationMap[currentSubcategory.id]
                   ? t[categoryTranslationMap[currentSubcategory.id]]
-                  : currentSubcategory.displayLabel
+                  : currentSubcategory.title)
+                  || subcategoryId
                 ).toString().toUpperCase()}
               </h1>
             </div>
