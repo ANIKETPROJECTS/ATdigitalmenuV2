@@ -12,6 +12,8 @@ export interface MenuItem {
   image: string;
   restaurantId: ObjectId;
   isAvailable: boolean;
+  todaysSpecial: boolean;
+  chefSpecial: boolean;
   createdAt: Date;
   updatedAt: Date;
   __v: number;
@@ -111,6 +113,14 @@ export const insertMenuItemSchema = z.object({
   image: z.string().url(),
   restaurantId: z.string().optional(),
   isAvailable: z.boolean().default(true),
+  todaysSpecial: z.boolean().default(false),
+  chefSpecial: z.boolean().default(false),
+});
+
+export const updateMenuItemFlagsSchema = z.object({
+  todaysSpecial: z.boolean().optional(),
+  chefSpecial: z.boolean().optional(),
+  isAvailable: z.boolean().optional(),
 });
 
 export const insertCartItemSchema = z.object({

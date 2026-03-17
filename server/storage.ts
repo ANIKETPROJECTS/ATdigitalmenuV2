@@ -1,6 +1,12 @@
 import { MongoClient, Db, Collection, ObjectId } from "mongodb";
 import { type User, type InsertUser, type MenuItem, type InsertMenuItem, type CartItem, type InsertCartItem, type Customer, type InsertCustomer, type SocialLinks, type WelcomeScreenUI, type Coupon, type CarouselImage, type Logo, type MenuCategory } from "@shared/schema";
 
+type UpdateMenuItemFlags = {
+  todaysSpecial?: boolean;
+  chefSpecial?: boolean;
+  isAvailable?: boolean;
+};
+
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -11,6 +17,7 @@ export interface IStorage {
   getMenuItem(id: string): Promise<MenuItem | undefined>;
   getCategories(): string[];
   addMenuItem(item: InsertMenuItem): Promise<MenuItem>;
+  updateMenuItemFlags(id: string, category: string, flags: UpdateMenuItemFlags): Promise<MenuItem | undefined>;
 
   getCartItems(): Promise<CartItem[]>;
   addToCart(item: InsertCartItem): Promise<CartItem>;
@@ -548,6 +555,16 @@ export class MongoStorage implements IStorage {
     const menuItem = { ...item, restaurantId: this.restaurantId, createdAt: now, updatedAt: now, __v: 0 };
     const result = await collection.insertOne(menuItem as any);
     return { _id: result.insertedId, ...menuItem } as any;
+  }
+
+  async updateMenuItemFlags(id: string, category: string, flags: UpdateMenuItemFlags): Promise<MenuItem | undefined> {
+    const collection = this.db.collection<MenuItem>(category);
+    const updated = await collection.findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      { $set: { ...flags, updatedAt: new Date() } },
+      { returnDocument: "after" }
+    );
+    return updated || undefined;
   }
 
   async getCartItems(): Promise<CartItem[]> {

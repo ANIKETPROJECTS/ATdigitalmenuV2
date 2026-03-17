@@ -32,6 +32,7 @@ The application follows a traditional client-server architecture with clear sepa
 -   **API**: RESTful API with JSON responses
 -   **Technical Implementations**: Monorepo structure, full type safety across the stack, component-based UI, advanced animation system. Category-based data storage for menu items with automatic collection creation for new categories.
 -   **Feature Specifications**: Menu display with category filtering and search, shopping cart functionality, Google review system integration, and menu item sorting (Veg items first, then Chicken, then Prawns, then others).
+-   **Smart Picks Flags**: Each `MenuItem` document has two boolean flags — `todaysSpecial` and `chefSpecial`. When `true`, the item appears in the Smart Picks panel under "Today's Special" or "Chef's Special" respectively. Flags are toggled via `PATCH /api/menu-items/:id` (body: `{ category, todaysSpecial?, chefSpecial?, isAvailable? }`).
 
 ### Deployment Strategy
 

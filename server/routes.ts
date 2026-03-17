@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertCartItemSchema, insertCustomerSchema } from "@shared/schema";
+import { insertCartItemSchema, insertCustomerSchema, updateMenuItemFlagsSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Customer routes
@@ -108,6 +108,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(items);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch menu items by category" });
+    }
+  });
+
+  // Update todaysSpecial / chefSpecial / isAvailable flags on a menu item
+  app.patch("/api/menu-items/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { category, ...flagsBody } = req.body;
+      if (!category) return res.status(400).json({ message: "category is required" });
+      const flags = updateMenuItemFlagsSchema.parse(flagsBody);
+      const updated = await storage.updateMenuItemFlags(id, category, flags);
+      if (!updated) return res.status(404).json({ message: "Menu item not found" });
+      res.json(updated);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
     }
   });
 

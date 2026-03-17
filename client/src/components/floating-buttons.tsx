@@ -26,8 +26,8 @@ export default function FloatingButtons({ isMenuOpen = false }: FloatingButtonsP
   const smartSections = useMemo(() => {
     const available = allItems.filter(i => i.isAvailable);
     return {
-      today: available.filter(i => i.category?.toLowerCase() === "nibbles"),
-      chef: available.filter(i => i.category?.toLowerCase() === "salads"),
+      today: available.filter(i => i.todaysSpecial === true),
+      chef: available.filter(i => i.chefSpecial === true),
     };
   }, [allItems]);
 
