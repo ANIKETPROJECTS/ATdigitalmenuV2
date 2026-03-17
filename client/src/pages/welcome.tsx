@@ -213,19 +213,20 @@ export default function Welcome() {
 
         {/* Logo */}
         <div
-          className="w-full flex justify-center"
-          style={{ paddingTop: "6px", maxHeight: "220px", overflow: "hidden" }}
+          className="w-full flex justify-center items-center flex-shrink-0"
+          style={{ paddingTop: "6px", height: "220px", overflow: "hidden" }}
         >
           <img
             src={logoSrc}
             alt="AT Digital Menu"
             style={{
-              width: "360px",
-              maxWidth: "100%",
-              maxHeight: "220px",
+              maxWidth: "360px",
+              width: "100%",
+              height: "100%",
               objectFit: "contain",
-              objectPosition: "center bottom",
+              objectPosition: "center center",
               filter: "none",
+              display: "block",
             }}
           />
         </div>
