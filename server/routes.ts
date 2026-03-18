@@ -238,6 +238,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Smart picks categories (dynamic tabs from DB)
+  app.get("/api/smart-picks-categories", async (req, res) => {
+    try {
+      const categories = await storage.getSmartPicksCategories();
+      res.json(categories);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch smart picks categories" });
+    }
+  });
+
   // Reservation routes
   app.post("/api/reservations", async (req, res) => {
     try {

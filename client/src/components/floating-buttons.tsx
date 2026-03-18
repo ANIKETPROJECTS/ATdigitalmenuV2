@@ -2,9 +2,9 @@ import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { X, Star, ChefHat } from "lucide-react";
+import { X, Star, ChefHat, Flame, Heart, Award, Sparkles, Zap, Coffee, Leaf, Trophy, ThumbsUp } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
-import type { MenuItem, CallWaiter } from "@shared/schema";
+import type { MenuItem, CallWaiter, SmartPicksCategory } from "@shared/schema";
 import chefsHatImg from "@assets/chefs-hat_1773556627617.png";
 import waiterImg from "@assets/waiter_1773555177013.png";
 import ProductCard from "@/components/product-card";
@@ -14,15 +14,35 @@ interface FloatingButtonsProps {
   isMenuOpen?: boolean;
 }
 
+const ICON_MAP: Record<string, React.ReactNode> = {
+  "star":       <Star className="w-3.5 h-3.5" />,
+  "chef-hat":   <ChefHat className="w-3.5 h-3.5" />,
+  "flame":      <Flame className="w-3.5 h-3.5" />,
+  "heart":      <Heart className="w-3.5 h-3.5" />,
+  "award":      <Award className="w-3.5 h-3.5" />,
+  "sparkles":   <Sparkles className="w-3.5 h-3.5" />,
+  "zap":        <Zap className="w-3.5 h-3.5" />,
+  "coffee":     <Coffee className="w-3.5 h-3.5" />,
+  "leaf":       <Leaf className="w-3.5 h-3.5" />,
+  "trophy":     <Trophy className="w-3.5 h-3.5" />,
+  "thumbs-up":  <ThumbsUp className="w-3.5 h-3.5" />,
+};
+
 export default function FloatingButtons({ isMenuOpen = false }: FloatingButtonsProps) {
   const { isDark } = useTheme();
   const queryClient = useQueryClient();
   const [showSmartMenu, setShowSmartMenu] = useState(false);
-  const [activeSmartSection, setActiveSmartSection] = useState<"today" | "chef">("today");
+  const [activeSmartSection, setActiveSmartSection] = useState<string>("");
   const [smartVegFilter, setSmartVegFilter] = useState<"all" | "veg" | "non-veg">("all");
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
   const { data: allItems = [] } = useQuery<MenuItem[]>({ queryKey: ["/api/menu-items"] });
+
+  const { data: smartPicksTabs = [] } = useQuery<SmartPicksCategory[]>({
+    queryKey: ["/api/smart-picks-categories"],
+  });
+
+  const activeTab = smartPicksTabs.find(t => t.key === activeSmartSection) ?? smartPicksTabs[0];
 
   const { data: callWaiterData } = useQuery<CallWaiter>({ queryKey: ["/api/call-waiter"] });
   const waiterCalled = callWaiterData?.called ?? false;
@@ -34,20 +54,15 @@ export default function FloatingButtons({ isMenuOpen = false }: FloatingButtonsP
     },
   });
 
-  const smartSections = useMemo(() => {
-    const available = allItems.filter(i => i.isAvailable);
-    return {
-      today: available.filter(i => i.todaysSpecial === true),
-      chef: available.filter(i => i.chefSpecial === true),
-    };
-  }, [allItems]);
-
   const smartFilteredItems = useMemo(() => {
-    const items = smartSections[activeSmartSection] || [];
-    if (smartVegFilter === "veg") return items.filter((i) => i.isVeg);
-    if (smartVegFilter === "non-veg") return items.filter((i) => !i.isVeg);
-    return items;
-  }, [smartSections, activeSmartSection, smartVegFilter]);
+    if (!activeTab) return [];
+    const available = allItems.filter(i => i.isAvailable && (i as any)[activeTab.key] === true);
+    if (smartVegFilter === "veg") return available.filter(i => i.isVeg);
+    if (smartVegFilter === "non-veg") return available.filter(i => !i.isVeg);
+    return available;
+  }, [allItems, activeTab, smartVegFilter]);
+
+  const currentTabKey = activeSmartSection || smartPicksTabs[0]?.key || "";
 
   return (
     <>
@@ -67,7 +82,6 @@ export default function FloatingButtons({ isMenuOpen = false }: FloatingButtonsP
               className="flex items-center justify-between px-5 pt-5 pb-4 flex-shrink-0"
               style={{ borderBottom: "1px solid rgba(212,175,55,0.15)" }}
             >
-              {/* Title */}
               <div className="flex items-center gap-3">
                 <div
                   className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0"
@@ -91,7 +105,6 @@ export default function FloatingButtons({ isMenuOpen = false }: FloatingButtonsP
                 </div>
               </div>
 
-              {/* Gold X close button — aligned with header */}
               <button
                 onClick={() => setShowSmartMenu(false)}
                 className="flex items-center justify-center w-9 h-9 rounded-full transition-all active:scale-90 flex-shrink-0"
@@ -106,45 +119,47 @@ export default function FloatingButtons({ isMenuOpen = false }: FloatingButtonsP
               </button>
             </div>
 
-            {/* Section Tabs */}
-            <div className="flex gap-2 px-5 pt-4 pb-3 flex-shrink-0">
-              {[
-                { key: "today", label: "Today's Special", icon: <Star className="w-3.5 h-3.5" /> },
-                { key: "chef", label: "Chef's Special", icon: <ChefHat className="w-3.5 h-3.5" /> },
-              ].map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveSmartSection(tab.key as typeof activeSmartSection)}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[11px] font-semibold tracking-wider uppercase whitespace-nowrap transition-all duration-200 flex-shrink-0"
-                  style={
-                    activeSmartSection === tab.key
-                      ? {
-                          background: "linear-gradient(90deg, #D4AF37, #E6C55A)",
-                          color: "#1A1408",
-                          fontFamily: "'DM Sans', sans-serif",
-                        }
-                      : {
-                          backgroundColor: "rgba(212,175,55,0.08)",
-                          border: "1px solid rgba(212,175,55,0.25)",
-                          color: "var(--bb-gold)",
-                          fontFamily: "'DM Sans', sans-serif",
-                        }
-                  }
-                  data-testid={`smart-tab-${tab.key}`}
-                >
-                  {tab.icon}
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+            {/* Section Tabs — fully dynamic from DB */}
+            {smartPicksTabs.length > 0 && (
+              <div className="flex gap-2 px-5 pt-4 pb-3 flex-shrink-0 overflow-x-auto">
+                {smartPicksTabs.map((tab) => {
+                  const isActive = currentTabKey === tab.key;
+                  return (
+                    <button
+                      key={tab.key}
+                      onClick={() => setActiveSmartSection(tab.key)}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[11px] font-semibold tracking-wider uppercase whitespace-nowrap transition-all duration-200 flex-shrink-0"
+                      style={
+                        isActive
+                          ? {
+                              background: "linear-gradient(90deg, #D4AF37, #E6C55A)",
+                              color: "#1A1408",
+                              fontFamily: "'DM Sans', sans-serif",
+                            }
+                          : {
+                              backgroundColor: "rgba(212,175,55,0.08)",
+                              border: "1px solid rgba(212,175,55,0.25)",
+                              color: "var(--bb-gold)",
+                              fontFamily: "'DM Sans', sans-serif",
+                            }
+                      }
+                      data-testid={`smart-tab-${tab.key}`}
+                    >
+                      {ICON_MAP[tab.icon] ?? <Star className="w-3.5 h-3.5" />}
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
-            {/* Veg / Non-Veg Filter row */}
+            {/* Tagline + Veg filter row */}
             <div className="px-5 pb-3 flex items-center justify-between flex-shrink-0">
               <p
                 className="text-[11px] tracking-wide"
                 style={{ color: "rgba(212,175,55,0.6)", fontFamily: "'DM Sans', sans-serif" }}
               >
-                {activeSmartSection === "today" ? "Tried and loved picks for today" : "Handpicked by our head chef"}
+                {activeTab?.tagline ?? ""}
               </p>
               <div
                 className="inline-flex rounded-full p-0.5 items-center gap-0 flex-shrink-0"
@@ -180,7 +195,7 @@ export default function FloatingButtons({ isMenuOpen = false }: FloatingButtonsP
             <div className="overflow-y-auto flex-1 pb-8 px-5">
               <AnimatePresence mode="wait">
                 <motion.div
-                  key={activeSmartSection + smartVegFilter}
+                  key={currentTabKey + smartVegFilter}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}

@@ -1,5 +1,5 @@
 import { MongoClient, Db, Collection, ObjectId } from "mongodb";
-import { type User, type InsertUser, type MenuItem, type InsertMenuItem, type CartItem, type InsertCartItem, type Customer, type InsertCustomer, type SocialLinks, type WelcomeScreenUI, type Coupon, type CarouselImage, type Logo, type MenuCategory, type Reservation, type InsertReservation, type PaymentDetails, type CallWaiter, type RestaurantInfo } from "@shared/schema";
+import { type User, type InsertUser, type MenuItem, type InsertMenuItem, type CartItem, type InsertCartItem, type Customer, type InsertCustomer, type SocialLinks, type WelcomeScreenUI, type Coupon, type CarouselImage, type Logo, type MenuCategory, type MenuSubCategory, type Reservation, type InsertReservation, type PaymentDetails, type CallWaiter, type RestaurantInfo, type SmartPicksCategory } from "@shared/schema";
 
 type UpdateMenuItemFlags = {
   todaysSpecial?: boolean;
@@ -48,6 +48,8 @@ export interface IStorage {
 
   getRestaurantInfo(): Promise<RestaurantInfo | null>;
   updateRestaurantInfo(data: Partial<Omit<RestaurantInfo, '_id'>>): Promise<RestaurantInfo | null>;
+
+  getSmartPicksCategories(): Promise<SmartPicksCategory[]>;
 }
 
 export class MongoStorage implements IStorage {
@@ -72,6 +74,8 @@ export class MongoStorage implements IStorage {
   private paymentDetailsCollection: Collection<PaymentDetails>;
   private callWaiterCollection: Collection<CallWaiter>;
   private restaurantInfoCollection: Collection<RestaurantInfo>;
+  private smartpicksDb: Db;
+  private smartpicksCategorieCollection: Collection<SmartPicksCategory>;
   private restaurantId: ObjectId;
 
   private readonly categories = [
@@ -114,6 +118,8 @@ export class MongoStorage implements IStorage {
     this.paymentDetailsCollection = this.hamburgerDb.collection<PaymentDetails>("paymentdetails");
     this.callWaiterCollection = this.menuPageDb.collection<CallWaiter>("callwaiter");
     this.restaurantInfoCollection = this.hamburgerDb.collection<RestaurantInfo>("restaurantinfo");
+    this.smartpicksDb = this.client.db("smartpicks");
+    this.smartpicksCategorieCollection = this.smartpicksDb.collection<SmartPicksCategory>("smartpickscategorie");
     this.restaurantId = new ObjectId("6874cff2a880250859286de6");
   }
 
@@ -492,6 +498,24 @@ export class MongoStorage implements IStorage {
         }
       );
     }
+
+    // Ensure smartpicks.smartpickscategorie collection exists and is seeded
+    const smartpicksCollections = await this.smartpicksDb.listCollections().toArray();
+    const smartpicksExistingNames = smartpicksCollections.map(c => c.name);
+
+    if (!smartpicksExistingNames.includes("smartpickscategorie")) {
+      console.log(`[Storage] Creating missing collection: smartpickscategorie in smartpicks`);
+      await this.smartpicksDb.createCollection("smartpickscategorie");
+    }
+
+    const existingSmartPicks = await this.smartpicksCategorieCollection.countDocuments();
+    if (existingSmartPicks === 0) {
+      console.log(`[Storage] Seeding default smart picks categories into smartpicks.smartpickscategorie`);
+      await this.smartpicksCategorieCollection.insertMany([
+        { key: "todaysSpecial", label: "Today's Special", icon: "star", tagline: "Tried and loved picks for today", order: 1 },
+        { key: "chefSpecial", label: "Chef's Special", icon: "chef-hat", tagline: "Handpicked by our head chef", order: 2 },
+      ] as any[]);
+    }
   }
 
   async getSocialLinks(): Promise<SocialLinks | null> {
@@ -512,6 +536,10 @@ export class MongoStorage implements IStorage {
 
   async getLogo(): Promise<Logo | null> {
     return await this.logoCollection.findOne({});
+  }
+
+  async getSmartPicksCategories(): Promise<SmartPicksCategory[]> {
+    return await this.smartpicksCategorieCollection.find({}).sort({ order: 1 }).toArray();
   }
 
   private addVisibilityToSubcats(subcats: MenuSubCategory[]): { changed: boolean; result: MenuSubCategory[] } {

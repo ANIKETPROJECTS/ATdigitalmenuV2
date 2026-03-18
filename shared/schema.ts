@@ -99,6 +99,15 @@ export interface Reservation {
   createdAt: Date;
 }
 
+export interface SmartPicksCategory {
+  _id: ObjectId;
+  label: string;
+  key: string;
+  icon: string;
+  tagline: string;
+  order: number;
+}
+
 export interface PaymentDetails {
   _id: ObjectId;
   upiId: string;
