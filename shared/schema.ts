@@ -69,6 +69,7 @@ export interface CarouselImage {
   url: string;
   alt: string;
   order: number;
+  visible: boolean;
 }
 
 export interface Coupon {

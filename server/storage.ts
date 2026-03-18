@@ -201,12 +201,21 @@ export class MongoStorage implements IStorage {
     if (existingCarousel === 0) {
       console.log(`[Storage] Seeding default carousel images into menupage.carousel`);
       await this.carouselCollection.insertMany([
-        { url: "/carousel/promo1.jpg", alt: "Restaurant Interior", order: 1 },
-        { url: "/carousel/promo2.jpg", alt: "Bar & Dining Area", order: 2 },
-        { url: "/carousel/promo3.jpg", alt: "Modern Ambiance", order: 3 },
-        { url: "/carousel/promo4.jpg", alt: "Contemporary Dining", order: 4 },
-        { url: "/carousel/promo5.jpg", alt: "Elegant Seating", order: 5 },
+        { url: "/carousel/promo1.jpg", alt: "Restaurant Interior", order: 1, visible: true },
+        { url: "/carousel/promo2.jpg", alt: "Bar & Dining Area", order: 2, visible: true },
+        { url: "/carousel/promo3.jpg", alt: "Modern Ambiance", order: 3, visible: true },
+        { url: "/carousel/promo4.jpg", alt: "Contemporary Dining", order: 4, visible: true },
+        { url: "/carousel/promo5.jpg", alt: "Elegant Seating", order: 5, visible: true },
       ] as any[]);
+    } else {
+      // Migrate existing documents to add visible: true if they don't have the field
+      const migrated = await this.carouselCollection.updateMany(
+        { visible: { $exists: false } },
+        { $set: { visible: true } }
+      );
+      if (migrated.modifiedCount > 0) {
+        console.log(`[Storage] Migrated ${migrated.modifiedCount} carousel documents to add visible: true`);
+      }
     }
 
     // Ensure menupage.logo collection exists and is seeded
@@ -474,7 +483,7 @@ export class MongoStorage implements IStorage {
   }
 
   async getCarouselImages(): Promise<CarouselImage[]> {
-    return await this.carouselCollection.find({}).sort({ order: 1 }).toArray();
+    return await this.carouselCollection.find({ visible: true }).sort({ order: 1 }).toArray();
   }
 
   async getLogo(): Promise<Logo | null> {
