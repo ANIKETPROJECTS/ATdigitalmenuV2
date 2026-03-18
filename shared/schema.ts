@@ -131,6 +131,7 @@ export interface MenuSubCategory {
   id: string;
   title: string;
   image: string;
+  visible: boolean;
   subcategories: MenuSubCategory[];
 }
 
@@ -140,6 +141,7 @@ export interface MenuCategory {
   title: string;
   image: string;
   order: number;
+  visible: boolean;
   subcategories: MenuSubCategory[];
 }
 

@@ -291,6 +291,7 @@ export class MongoStorage implements IStorage {
     }
 
     const existingCategories = await this.categoriesCollection.countDocuments();
+
     if (existingCategories === 0) {
       console.log(`[Storage] Seeding default categories into menupage.categories`);
       await this.categoriesCollection.insertMany([
@@ -401,6 +402,29 @@ export class MongoStorage implements IStorage {
       ] as any[]);
     }
 
+    // Migrate all categories and their subcategories to add visible: true where missing
+    {
+      const allCats = await this.categoriesCollection.find({}).toArray();
+      let migrated = 0;
+      for (const cat of allCats) {
+        const updates: any = {};
+        if (cat.visible === undefined || cat.visible === null) {
+          updates.visible = true;
+        }
+        const { changed: subsChanged, result: updatedSubcats } = this.addVisibilityToSubcats(cat.subcategories || []);
+        if (subsChanged) {
+          updates.subcategories = updatedSubcats;
+        }
+        if (Object.keys(updates).length > 0) {
+          await this.categoriesCollection.updateOne({ _id: cat._id }, { $set: updates });
+          migrated++;
+        }
+      }
+      if (migrated > 0) {
+        console.log(`[Storage] Migrated ${migrated} category documents to add visible: true`);
+      }
+    }
+
     // Ensure menupage.callwaiter collection exists and is seeded
     if (!menuPageExistingNames.includes("callwaiter")) {
       console.log(`[Storage] Creating missing collection: callwaiter in menupage`);
@@ -490,8 +514,43 @@ export class MongoStorage implements IStorage {
     return await this.logoCollection.findOne({});
   }
 
+  private addVisibilityToSubcats(subcats: MenuSubCategory[]): { changed: boolean; result: MenuSubCategory[] } {
+    let changed = false;
+    const result = subcats.map(sub => {
+      const updated: any = { ...sub };
+      if (updated.visible === undefined || updated.visible === null) {
+        updated.visible = true;
+        changed = true;
+      }
+      if (sub.subcategories?.length) {
+        const { changed: childChanged, result: childResult } = this.addVisibilityToSubcats(sub.subcategories);
+        if (childChanged) {
+          updated.subcategories = childResult;
+          changed = true;
+        }
+      }
+      return updated;
+    });
+    return { changed, result };
+  }
+
+  private filterVisibleSubcats(subcats: MenuSubCategory[]): MenuSubCategory[] {
+    return subcats
+      .filter(sub => sub.visible !== false)
+      .map(sub => ({
+        ...sub,
+        subcategories: this.filterVisibleSubcats(sub.subcategories || []),
+      }));
+  }
+
   async getMenuCategories(): Promise<MenuCategory[]> {
-    return await this.categoriesCollection.find({}).sort({ order: 1 }).toArray();
+    const all = await this.categoriesCollection.find({}).sort({ order: 1 }).toArray();
+    return all
+      .filter(cat => cat.visible !== false)
+      .map(cat => ({
+        ...cat,
+        subcategories: this.filterVisibleSubcats(cat.subcategories || []),
+      }));
   }
 
   async getUser(id: string): Promise<User | undefined> {
