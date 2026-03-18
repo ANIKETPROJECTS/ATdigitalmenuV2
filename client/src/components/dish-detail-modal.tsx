@@ -10,18 +10,10 @@ interface DishDetailModalProps {
   onClose: () => void;
 }
 
-const NUTRITION_PLACEHOLDER = [
-  { label: "Calories", value: "—" },
-  { label: "Protein", value: "—" },
-  { label: "Carbs", value: "—" },
-  { label: "Fat", value: "—" },
-  { label: "Fibre", value: "—" },
-  { label: "Sodium", value: "—" },
-];
-
+const DEFAULT_NUTRITION_KEYS = ["Calories", "Protein", "Carbs", "Fat", "Fibre", "Sodium"];
 const ALLERGEN_PLACEHOLDER = "Information not available for this item.";
 const INGREDIENTS_PLACEHOLDER = "Detailed ingredient list not available.";
-const PREP_TIME_PLACEHOLDER = "15–25 mins";
+const PREP_TIME_PLACEHOLDER = "—";
 
 export default function DishDetailModal({ item, onClose }: DishDetailModalProps) {
   const { isDark } = useTheme();
@@ -41,6 +33,18 @@ export default function DishDetailModal({ item, onClose }: DishDetailModalProps)
     typeof item.price === "string" && item.price.includes("|")
       ? item.price.split("|").map((p: string) => `₹${p.trim()}`).join("  |  ")
       : `₹${item.price}`;
+
+  // Build nutrition entries from item data or show default placeholders
+  const hasNutrition = item.nutritionalContents && Object.keys(item.nutritionalContents).length > 0;
+  const nutritionEntries: { label: string; value: string }[] = hasNutrition
+    ? Object.entries(item.nutritionalContents!).map(([k, v]) => ({
+        label: k.charAt(0).toUpperCase() + k.slice(1),
+        value: String(v),
+      }))
+    : DEFAULT_NUTRITION_KEYS.map((k) => ({ label: k, value: "—" }));
+
+  const hasAllergens = item.allergens && item.allergens.length > 0;
+  const hasIngredients = item.ingredients && item.ingredients.length > 0;
 
   return (
     <AnimatePresence>
@@ -168,9 +172,13 @@ export default function DishDetailModal({ item, onClose }: DishDetailModalProps)
                 </p>
                 <p
                   className="text-sm font-semibold"
-                  style={{ color: textPrimary, fontFamily: "'DM Sans', sans-serif" }}
+                  style={{
+                    color: item.preparationTime ? textPrimary : textSecondary,
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}
+                  data-testid="text-prep-time"
                 >
-                  {PREP_TIME_PLACEHOLDER}
+                  {item.preparationTime || PREP_TIME_PLACEHOLDER}
                 </p>
               </div>
             </div>
@@ -187,11 +195,12 @@ export default function DishDetailModal({ item, onClose }: DishDetailModalProps)
                 Nutritional Contents
               </h3>
               <div className="grid grid-cols-3 gap-2">
-                {NUTRITION_PLACEHOLDER.map((n) => (
+                {nutritionEntries.map((n) => (
                   <div
                     key={n.label}
                     className="rounded-xl p-3 text-center"
                     style={{ background: cardBg, border: cardBorder }}
+                    data-testid={`nutrition-${n.label.toLowerCase()}`}
                   >
                     <p
                       className="text-[10px] uppercase tracking-wider mb-1"
@@ -208,12 +217,14 @@ export default function DishDetailModal({ item, onClose }: DishDetailModalProps)
                   </div>
                 ))}
               </div>
-              <p
-                className="text-[10px] mt-2 text-center uppercase tracking-wider"
-                style={{ color: "rgba(212,175,55,0.35)", fontFamily: "'DM Sans', sans-serif" }}
-              >
-                Nutritional info will be available soon
-              </p>
+              {!hasNutrition && (
+                <p
+                  className="text-[10px] mt-2 text-center uppercase tracking-wider"
+                  style={{ color: "rgba(212,175,55,0.35)", fontFamily: "'DM Sans', sans-serif" }}
+                >
+                  Nutritional info will be available soon
+                </p>
+              )}
             </div>
 
             {/* Divider */}
@@ -227,17 +238,36 @@ export default function DishDetailModal({ item, onClose }: DishDetailModalProps)
               >
                 Allergens
               </h3>
-              <div
-                className="rounded-xl px-4 py-3"
-                style={{ background: cardBg, border: cardBorder }}
-              >
-                <p
-                  className="text-sm"
-                  style={{ color: textPrimary, fontFamily: "'DM Sans', sans-serif", opacity: 0.75 }}
+              {hasAllergens ? (
+                <div className="flex flex-wrap gap-2" data-testid="allergens-list">
+                  {item.allergens!.map((allergen) => (
+                    <span
+                      key={allergen}
+                      className="px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase"
+                      style={{
+                        background: isDark ? "rgba(239,68,68,0.12)" : "rgba(239,68,68,0.08)",
+                        border: "1px solid rgba(239,68,68,0.35)",
+                        color: isDark ? "#FCA5A5" : "#DC2626",
+                        fontFamily: "'DM Sans', sans-serif",
+                      }}
+                    >
+                      {allergen}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <div
+                  className="rounded-xl px-4 py-3"
+                  style={{ background: cardBg, border: cardBorder }}
                 >
-                  {ALLERGEN_PLACEHOLDER}
-                </p>
-              </div>
+                  <p
+                    className="text-sm"
+                    style={{ color: textPrimary, fontFamily: "'DM Sans', sans-serif", opacity: 0.75 }}
+                  >
+                    {ALLERGEN_PLACEHOLDER}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Divider */}
@@ -251,17 +281,36 @@ export default function DishDetailModal({ item, onClose }: DishDetailModalProps)
               >
                 Ingredients
               </h3>
-              <div
-                className="rounded-xl px-4 py-3"
-                style={{ background: cardBg, border: cardBorder }}
-              >
-                <p
-                  className="text-sm"
-                  style={{ color: textPrimary, fontFamily: "'DM Sans', sans-serif", opacity: 0.75 }}
+              {hasIngredients ? (
+                <div className="flex flex-wrap gap-2" data-testid="ingredients-list">
+                  {item.ingredients!.map((ingredient) => (
+                    <span
+                      key={ingredient}
+                      className="px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide"
+                      style={{
+                        background: cardBg,
+                        border: cardBorder,
+                        color: textPrimary,
+                        fontFamily: "'DM Sans', sans-serif",
+                      }}
+                    >
+                      {ingredient}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <div
+                  className="rounded-xl px-4 py-3"
+                  style={{ background: cardBg, border: cardBorder }}
                 >
-                  {INGREDIENTS_PLACEHOLDER}
-                </p>
-              </div>
+                  <p
+                    className="text-sm"
+                    style={{ color: textPrimary, fontFamily: "'DM Sans', sans-serif", opacity: 0.75 }}
+                  >
+                    {INGREDIENTS_PLACEHOLDER}
+                  </p>
+                </div>
+              )}
             </div>
 
           </div>

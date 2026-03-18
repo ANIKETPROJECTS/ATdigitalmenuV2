@@ -17,6 +17,10 @@ export interface MenuItem {
   createdAt: Date;
   updatedAt: Date;
   __v: number;
+  preparationTime?: string;
+  nutritionalContents?: Record<string, number | string>;
+  allergens?: string[];
+  ingredients?: string[];
 }
 
 export interface CartItem {
@@ -167,6 +171,10 @@ export const insertMenuItemSchema = z.object({
   isAvailable: z.boolean().default(true),
   todaysSpecial: z.boolean().default(false),
   chefSpecial: z.boolean().default(false),
+  preparationTime: z.string().optional(),
+  nutritionalContents: z.record(z.string(), z.union([z.number(), z.string()])).optional(),
+  allergens: z.array(z.string()).optional(),
+  ingredients: z.array(z.string()).optional(),
 });
 
 export const updateMenuItemFlagsSchema = z.object({
