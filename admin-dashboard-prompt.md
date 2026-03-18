@@ -13,29 +13,28 @@ When the **"Dashboard"** button is clicked, instead of going to the old Menu Man
 
 ---
 
-## MONGODB STRUCTURE (Digital Menu Database)
+## IMPORTANT — DATABASE NAMING
 
-The digital menu for each restaurant connects to a MongoDB instance with the following databases and collections. The Dashboard must perform full CRUD operations on all of them.
+Every restaurant has its own independent MongoDB instance with its own database names and collection names. **None of the database names, collection names, or document values are fixed** — they differ from restaurant to restaurant. The dashboard must:
+
+- Accept the restaurant's MongoDB connection details (base API URL) as a configurable input stored on the restaurant record in the admin panel
+- **Never hardcode any database name, collection name, or category name**
+- Discover collections dynamically at runtime by calling the API (e.g. `GET /api/categories` returns the list of categories/collections that exist for that specific restaurant)
+- The main menu database name, category collection names, item names, and all other values are different for every restaurant
 
 ---
 
-### Database: `barrelborn` (Main Menu DB)
+## MONGODB STRUCTURE (Digital Menu Database)
 
-**Menu Item Collections** — one MongoDB collection per food/drink category. Each collection contains MenuItem documents.
+Each restaurant's digital menu connects to a MongoDB instance structured as follows. The exact names of databases and collections will vary per restaurant — what is described below is the **structure and schema**, not the names.
 
-**Category collection names:**
+---
 
-```
-nibbles, soups, titbits, salads, mangalorean-style, wok, charcoal, continental, pasta,
-artisan-pizzas, mini-burger-sliders, entree-(main-course), bao-&-dim-sum,
-indian-mains---curries, biryanis-&-rice, dals, breads, asian-mains,
-rice-with-curry---thai-&-asian-bowls, rice-&-noodles, desserts, blended-whisky,
-blended-scotch-whisky, american-irish-whiskey, single-malt-whisky, vodka, gin, rum,
-tequila, cognac-brandy, liqueurs, sparkling-wine, white-wines, rose-wines, red-wines,
-dessert-wines, port-wine, signature-mocktails, soft-beverages, craft-beers-on-tap,
-draught-beer, pint-beers, classic-cocktails, signature-cocktails, wine-cocktails,
-sangria, beer-cocktail, signature-shots, sizzlers
-```
+### Database: Main Menu DB *(name varies per restaurant)*
+
+This database contains:
+
+**Menu Item Collections** — one MongoDB collection per food/drink category. The number of categories and their names are different for every restaurant. The list of collections is fetched dynamically from the API (`GET /api/menu-categories` or `GET /api/categories`). Each collection contains documents following this schema:
 
 **MenuItem Document Schema:**
 
@@ -44,8 +43,8 @@ sangria, beer-cocktail, signature-shots, sizzlers
   "_id": "ObjectId",
   "name": "string",
   "description": "string",
-  "price": "number OR string (e.g. '30ml: ₹200 / NIP: ₹400 / Bottle: ₹2000')",
-  "category": "string (collection name)",
+  "price": "number OR string (e.g. multi-size pricing like '30ml: ₹200 / NIP: ₹400 / Bottle: ₹2000')",
+  "category": "string (the collection/category name this item belongs to)",
   "isVeg": "boolean",
   "image": "string (URL)",
   "restaurantId": "ObjectId",
@@ -55,19 +54,19 @@ sangria, beer-cocktail, signature-shots, sizzlers
   "createdAt": "Date",
   "updatedAt": "Date",
   "preparationTime": "string (optional)",
-  "nutritionalContents": "object key-value (optional)",
+  "nutritionalContents": "object key-value pairs (optional)",
   "allergens": ["string (optional)"],
   "ingredients": ["string (optional)"]
 }
 ```
 
-**Other collections in `barrelborn`:**
+**Other fixed collections in the main menu DB:**
 - `cartitems` — `{ menuItemId, quantity, createdAt, updatedAt }`
 - `users` — `{ username, password, createdAt, updatedAt }`
 
 ---
 
-### Database: `customersdb`
+### Database: `customersdb` *(name fixed)*
 
 **Collection: `customers`**
 
@@ -85,7 +84,7 @@ sangria, beer-cocktail, signature-shots, sizzlers
 
 ---
 
-### Database: `socialsandcontact`
+### Database: `socialsandcontact` *(name fixed)*
 
 **Collection: `link`** (single document)
 
@@ -106,7 +105,7 @@ sangria, beer-cocktail, signature-shots, sizzlers
 
 ---
 
-### Database: `welcomescreen`
+### Database: `welcomescreen` *(name fixed)*
 
 **Collection: `welcomescreenui`** (single document)
 
@@ -120,7 +119,7 @@ sangria, beer-cocktail, signature-shots, sizzlers
 
 ---
 
-### Database: `menupage`
+### Database: `menupage` *(name fixed)*
 
 **Collection: `coupons`**
 
@@ -158,13 +157,13 @@ sangria, beer-cocktail, signature-shots, sizzlers
 }
 ```
 
-**Collection: `categories`** (top-level menu groupings with nested subcategories)
+**Collection: `categories`** (top-level menu groupings with nested subcategories — structure is fixed, but the actual category names and count vary per restaurant)
 
 ```json
 {
   "_id": "ObjectId",
-  "id": "string (slug, e.g. 'food')",
-  "title": "string (e.g. 'FOOD')",
+  "id": "string (slug identifier)",
+  "title": "string (display title)",
   "image": "string",
   "order": "number",
   "visible": "boolean",
@@ -191,7 +190,7 @@ sangria, beer-cocktail, signature-shots, sizzlers
 
 ---
 
-### Database: `hamburger`
+### Database: `hamburger` *(name fixed)*
 
 **Collection: `reservation`**
 
@@ -234,9 +233,9 @@ sangria, beer-cocktail, signature-shots, sizzlers
 
 ---
 
-### Database: `smartpicks`
+### Database: `smartpicks` *(name fixed)*
 
-**Collection: `smartpickscategorie`**
+**Collection: `smartpickscategorie`** (category names and count vary per restaurant)
 
 ```json
 {
@@ -260,10 +259,24 @@ Build a full-featured, beautiful Restaurant Dashboard that replaces the old Menu
 
 ### Layout
 
-- **Left sidebar** with collapsible navigation, icons (lucide-react) alongside text labels
-- **Top header** showing the restaurant name, logo, and a back button to return to the main admin panel
-- Clean, modern design with a consistent blue/white color theme matching the existing admin panel
-- Fully responsive layout
+- **Left sidebar** — collapsible, with lucide-react icons alongside text labels for each section
+- **Top header** — shows the restaurant name, its logo, and a back button to return to the main admin panel
+- **Fully responsive** layout
+- **Dynamic category lists** — never hardcode category names; always fetch them from the API and render dynamically
+
+---
+
+### Design — IMPORTANT
+
+> **The dashboard for each restaurant must have its own unique, colorful, and vibrant visual theme. Do NOT reuse or copy the admin panel's blue/white theme for the dashboard.** Each restaurant's dashboard should feel like a dedicated product — rich, expressive, and visually distinct. Use gradients, bold accent colors, warm or jewel-tone palettes, beautiful card designs, elegant typography, and tasteful use of color throughout the sidebar, header, cards, and section pages. The design should feel premium and modern — like a high-end SaaS dashboard — not a plain admin form.
+
+Examples of design directions to consider:
+- Deep navy + gold gradient sidebar with amber accent cards
+- Rich emerald green header with cream/white content areas and coral accents
+- Dark charcoal sidebar + vibrant teal/cyan highlights with glassmorphism cards
+- Warm terracotta + ivory tones with soft shadows and rounded cards
+
+Pick an attractive, cohesive color theme per restaurant and apply it consistently across the entire dashboard — sidebar active states, header, stat cards, section headings, badges, buttons, and icons should all reflect the chosen palette.
 
 ---
 
@@ -272,7 +285,7 @@ Build a full-featured, beautiful Restaurant Dashboard that replaces the old Menu
 | # | Section | Icon | Description |
 |---|---------|------|-------------|
 | 1 | Overview | `LayoutDashboard` | Stats cards: total menu items, customers, reservations, active coupons, categories |
-| 2 | Menu Items | `UtensilsCrossed` | Full CRUD across all category collections |
+| 2 | Menu Items | `UtensilsCrossed` | Full CRUD across all category collections (categories loaded dynamically) |
 | 3 | Categories | `LayoutGrid` | Tree view of top-level categories + subcategories, toggle visibility, reorder |
 | 4 | Smart Picks | `Sparkles` | List, toggle visibility, edit label/icon/tagline, reorder |
 | 5 | Carousel | `Images` | Image list with preview, add/edit/delete/reorder/toggle visible |
@@ -280,8 +293,8 @@ Build a full-featured, beautiful Restaurant Dashboard that replaces the old Menu
 | 7 | Customers | `Users` | Paginated table, search, date filter, sort, export CSV |
 | 8 | Reservations | `CalendarCheck` | Table, date filter, export CSV |
 | 9 | Social Links | `Share2` | Editable form for all social/contact links |
-| 10 | Welcome Screen | `Monitor` | Edit logoUrl (with preview) and buttonText |
-| 11 | Restaurant Info | `Info` | Edit each info entry (name, subtext, show toggle, linkKey) |
+| 10 | Welcome Screen | `Monitor` | Edit logoUrl (with live preview) and buttonText |
+| 11 | Restaurant Info | `Info` | Edit each info entry: name, subtext, show toggle, linkKey |
 | 12 | Payment Settings | `CreditCard` | Edit UPI ID |
 | 13 | Logo | `ImageIcon` | Preview current logo + update URL |
 | 14 | Call Waiter | `Bell` | Show called status + reset button |
@@ -291,23 +304,23 @@ Build a full-featured, beautiful Restaurant Dashboard that replaces the old Menu
 ### Section Details
 
 #### 2. Menu Items
-- List all items with search bar, filter by category (dropdown), filter toggles for isVeg / isAvailable / todaysSpecial / chefSpecial
-- Show item image preview, name, description, price, category, veg badge
+- List all items with a search bar, filter by category (dropdown populated dynamically from API), and filter toggles for isVeg / isAvailable / todaysSpecial / chefSpecial
+- Show item image preview, name, description, price, category badge, veg/non-veg badge
 - Inline toggle switches for `isAvailable`, `todaysSpecial`, `chefSpecial`
-- Add new item form: name, description, price, category dropdown (all 49 categories), isVeg toggle, image URL, isAvailable, todaysSpecial, chefSpecial, preparationTime, allergens (comma-separated), ingredients (comma-separated), nutritionalContents (key-value pairs)
-- Edit existing item (same form pre-populated)
+- Add new item form: name, description, price, category dropdown (loaded dynamically), isVeg toggle, image URL, isAvailable, todaysSpecial, chefSpecial, preparationTime, allergens (comma-separated), ingredients (comma-separated), nutritionalContents (key-value pairs)
+- Edit existing item (same form, pre-populated)
 - Delete item with confirmation dialog
 - Bulk import via JSON file upload
 
 #### 3. Categories
-- Render top-level categories as expandable cards showing their subcategories
+- Render top-level categories as expandable cards showing their subcategories (names loaded from API, not hardcoded)
 - Toggle `visible` for both top-level categories and subcategories
 - Reorder top-level categories with up/down buttons (updates `order` field)
 - Edit category title and image URL
 - Add / delete subcategories within a category
 
 #### 4. Smart Picks
-- List all smart picks categories
+- List all smart picks categories (fetched from API)
 - Toggle `isVisible` with a switch
 - Reorder with up/down buttons (updates `order` field)
 - Edit label, icon, tagline inline or via modal
@@ -343,7 +356,7 @@ Build a full-featured, beautiful Restaurant Dashboard that replaces the old Menu
 - Save button with success toast
 
 #### 10. Welcome Screen
-- Image preview of current `logoUrl`
+- Live image preview of current `logoUrl`
 - Input to update `logoUrl`
 - Input to update `buttonText`
 - Save button
@@ -367,13 +380,13 @@ Build a full-featured, beautiful Restaurant Dashboard that replaces the old Menu
 
 #### 14. Call Waiter
 - Display current `called` status (true/false) with a status badge
-- "Reset" button to set `called: false` with confirmation
+- "Reset" button to set `called: false` with confirmation dialog
 
 ---
 
 ### API Endpoints to Implement / Connect
 
-All endpoints use the restaurant's digital menu base URL (configurable per restaurant record).
+All endpoints use the restaurant's digital menu base URL stored on the restaurant record — this is configurable per restaurant and must never be hardcoded.
 
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
@@ -382,9 +395,9 @@ All endpoints use the restaurant's digital menu base URL (configurable per resta
 | POST | `/api/menu-items` | Create new menu item |
 | PATCH | `/api/menu-items/:id` | Update menu item flags |
 | DELETE | `/api/menu-items/:id` | Delete menu item |
-| GET | `/api/menu-categories` | Get category tree |
-| PATCH | `/api/menu-categories/:id` | Update category |
-| GET | `/api/smart-picks-categories` | List smart picks |
+| GET | `/api/menu-categories` | Get full category tree (used to build all category dropdowns and lists dynamically) |
+| PATCH | `/api/menu-categories/:id` | Update a category |
+| GET | `/api/smart-picks-categories` | List smart picks categories |
 | PATCH | `/api/smart-picks-categories/:key/visibility` | Toggle smart pick visibility |
 | GET | `/api/carousel` | List carousel images |
 | POST | `/api/carousel` | Add carousel image |
@@ -394,8 +407,8 @@ All endpoints use the restaurant's digital menu base URL (configurable per resta
 | POST | `/api/coupons` | Create coupon |
 | PATCH | `/api/coupons/:id` | Update coupon |
 | DELETE | `/api/coupons/:id` | Delete coupon |
-| GET | `/api/customers` | Paginated customers (Auth: `Bearer admin123`) |
-| GET | `/api/reservations` | All reservations (Auth: `Bearer admin123`) |
+| GET | `/api/customers` | Paginated customers (Auth header: `Bearer admin123`) |
+| GET | `/api/reservations` | All reservations (Auth header: `Bearer admin123`) |
 | GET | `/api/social-links` | Get social links |
 | PATCH | `/api/social-links` | Update social links |
 | GET | `/api/welcome-screen-ui` | Get welcome screen UI |
@@ -421,4 +434,5 @@ All endpoints use the restaurant's digital menu base URL (configurable per resta
 - **Confirmations:** Confirmation dialogs for all destructive (delete / reset) actions
 - **Loading States:** Skeleton loaders for all data-fetching sections
 - **Empty States:** Helpful empty state messages when collections have no data
-- **Design:** Blue/white professional color scheme matching the existing admin panel, collapsible sidebar with icons + labels, top header with restaurant name and back button
+- **Dynamic Everything:** All category dropdowns, lists, and filters must be populated from the API — never hardcoded
+- **Design:** Rich, colorful, premium dashboard theme (see Design section above) — collapsible sidebar with icons + labels, top header with restaurant name and back button
