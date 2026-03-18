@@ -516,6 +516,10 @@ export class MongoStorage implements IStorage {
         { key: "chefSpecial", label: "Chef's Special", icon: "chef-hat", tagline: "Handpicked by our head chef", order: 2 },
       ] as any[]);
     }
+
+    // Sync smart picks flags on startup and watch for live changes
+    await this.syncSmartPicksFlags();
+    this.watchSmartPicksCategories();
   }
 
   async getSocialLinks(): Promise<SocialLinks | null> {
@@ -540,6 +544,61 @@ export class MongoStorage implements IStorage {
 
   async getSmartPicksCategories(): Promise<SmartPicksCategory[]> {
     return await this.smartpicksCategorieCollection.find({}).sort({ order: 1 }).toArray();
+  }
+
+  async syncSmartPicksFlags(): Promise<void> {
+    const cats = await this.smartpicksCategorieCollection.find({}).toArray();
+    const currentKeys = cats.map(c => c.key);
+
+    const metaCollection = this.smartpicksDb.collection<any>("metadata");
+    const meta = await metaCollection.findOne({ _id: "managedKeys" as any });
+    const previousKeys: string[] = meta?.keys ?? [];
+
+    const keysToAdd = currentKeys.filter(k => !previousKeys.includes(k));
+    const keysToRemove = previousKeys.filter(k => !currentKeys.includes(k));
+
+    if (keysToAdd.length === 0 && keysToRemove.length === 0) return;
+
+    const allCollections = Array.from(this.categoryCollections.values());
+
+    for (const col of allCollections) {
+      for (const key of keysToAdd) {
+        await col.updateMany({ [key]: { $exists: false } }, { $set: { [key]: false } });
+      }
+      if (keysToRemove.length > 0) {
+        const unset: Record<string, string> = {};
+        keysToRemove.forEach(k => { unset[k] = ""; });
+        await col.updateMany({}, { $unset: unset });
+      }
+    }
+
+    await metaCollection.updateOne(
+      { _id: "managedKeys" as any },
+      { $set: { keys: currentKeys } },
+      { upsert: true }
+    );
+
+    if (keysToAdd.length > 0) {
+      console.log(`[SmartPicks] Added flag "${keysToAdd.join(", ")}" to all menu items`);
+    }
+    if (keysToRemove.length > 0) {
+      console.log(`[SmartPicks] Removed flag "${keysToRemove.join(", ")}" from all menu items`);
+    }
+  }
+
+  watchSmartPicksCategories(): void {
+    const changeStream = this.smartpicksCategorieCollection.watch([], { fullDocument: "updateLookup" });
+    changeStream.on("change", async () => {
+      try {
+        await this.syncSmartPicksFlags();
+      } catch (err) {
+        console.error("[SmartPicks] Failed to sync flags after change:", err);
+      }
+    });
+    changeStream.on("error", (err) => {
+      console.error("[SmartPicks] Change stream error:", err);
+    });
+    console.log("[SmartPicks] Watching smartpickscategorie for changes...");
   }
 
   private addVisibilityToSubcats(subcats: MenuSubCategory[]): { changed: boolean; result: MenuSubCategory[] } {
