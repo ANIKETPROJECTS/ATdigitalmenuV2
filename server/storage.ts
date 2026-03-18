@@ -50,6 +50,7 @@ export interface IStorage {
   updateRestaurantInfo(data: Partial<Omit<RestaurantInfo, '_id'>>): Promise<RestaurantInfo | null>;
 
   getSmartPicksCategories(): Promise<SmartPicksCategory[]>;
+  updateSmartPicksCategoryVisibility(key: string, isVisible: boolean): Promise<SmartPicksCategory | null>;
 }
 
 export class MongoStorage implements IStorage {
@@ -512,9 +513,15 @@ export class MongoStorage implements IStorage {
     if (existingSmartPicks === 0) {
       console.log(`[Storage] Seeding default smart picks categories into smartpicks.smartpickscategorie`);
       await this.smartpicksCategorieCollection.insertMany([
-        { key: "todaysSpecial", label: "Today's Special", icon: "star", tagline: "Tried and loved picks for today", order: 1 },
-        { key: "chefSpecial", label: "Chef's Special", icon: "chef-hat", tagline: "Handpicked by our head chef", order: 2 },
+        { key: "todaysSpecial", label: "Today's Special", icon: "star", tagline: "Tried and loved picks for today", order: 1, isVisible: true },
+        { key: "chefSpecial", label: "Chef's Special", icon: "chef-hat", tagline: "Handpicked by our head chef", order: 2, isVisible: true },
       ] as any[]);
+    } else {
+      // Migrate existing documents: add isVisible: true if field is missing
+      await this.smartpicksCategorieCollection.updateMany(
+        { isVisible: { $exists: false } },
+        { $set: { isVisible: true } }
+      );
     }
 
     // Sync smart picks flags on startup and watch for live changes
@@ -543,7 +550,12 @@ export class MongoStorage implements IStorage {
   }
 
   async getSmartPicksCategories(): Promise<SmartPicksCategory[]> {
-    return await this.smartpicksCategorieCollection.find({}).sort({ order: 1 }).toArray();
+    return await this.smartpicksCategorieCollection.find({ isVisible: true }).sort({ order: 1 }).toArray();
+  }
+
+  async updateSmartPicksCategoryVisibility(key: string, isVisible: boolean): Promise<SmartPicksCategory | null> {
+    await this.smartpicksCategorieCollection.updateOne({ key }, { $set: { isVisible } });
+    return await this.smartpicksCategorieCollection.findOne({ key }) as SmartPicksCategory | null;
   }
 
   async syncSmartPicksFlags(): Promise<void> {

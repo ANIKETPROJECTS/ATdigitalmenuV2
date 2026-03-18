@@ -106,6 +106,7 @@ export interface SmartPicksCategory {
   icon: string;
   tagline: string;
   order: number;
+  isVisible: boolean;
 }
 
 export interface PaymentDetails {

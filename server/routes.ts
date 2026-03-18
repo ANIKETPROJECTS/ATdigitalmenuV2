@@ -248,6 +248,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update visibility flag for a smart picks category
+  app.patch("/api/smart-picks-categories/:key/visibility", async (req, res) => {
+    try {
+      const { key } = req.params;
+      const { isVisible } = req.body;
+      if (typeof isVisible !== "boolean") {
+        return res.status(400).json({ message: "isVisible must be a boolean" });
+      }
+      const updated = await storage.updateSmartPicksCategoryVisibility(key, isVisible);
+      if (!updated) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update category visibility" });
+    }
+  });
+
   // Reservation routes
   app.post("/api/reservations", async (req, res) => {
     try {
